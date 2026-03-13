@@ -1,7 +1,7 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.Domain.DTO;
+namespace HeatLoss.BimAdapters.DTO;
 
 public class SpaceEdgeDto
 {
@@ -26,5 +26,12 @@ public class SpaceEdgeDto
         Start = start;
         End = end;
         LineString = new LineString(new[] { start, end });
+    }    
+    
+    public void ChangeLine(LineString newLine)
+    {
+        Start = newLine.StartPoint.Coordinate;
+        End = newLine.EndPoint.Coordinate;
+        LineString = newLine;
     }
 }

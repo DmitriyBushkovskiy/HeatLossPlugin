@@ -1,4 +1,4 @@
-﻿namespace HeatLoss.Domain.DTO;
+﻿namespace HeatLoss.BimAdapters.DTO;
 
 public class BuildingDto
 {

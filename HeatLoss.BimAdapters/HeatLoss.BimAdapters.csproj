@@ -36,8 +36,4 @@
       <ProjectReference Include="..\HeatLoss.Geometry\HeatLoss.Geometry.csproj" />
     </ItemGroup>
 
-    <ItemGroup>
-      <PackageReference Include="NetTopologySuite" Version="2.6.0" />
-    </ItemGroup>
-
 </Project>

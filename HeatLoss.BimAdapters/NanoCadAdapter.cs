@@ -1,8 +1,9 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
 using BIMStructureMgd.ObjectProperties;
+using HeatLoss.BimAdapters.DTO;
 using HeatLoss.BimAdapters.Extensions;
-using HeatLoss.Domain.DTO;
 using HeatLoss.Geometry;
+using HeatLoss.Geometry.Extensions;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;
 using NetTopologySuite.Geometries;
@@ -35,6 +36,9 @@ public class NanoCadAdapter
 
         CreateOpenings();
         
+        
+        
+        
         // далее удалить
         var document = Application.DocumentManager.MdiActiveDocument;
         var editor = document.Editor;
@@ -50,6 +54,10 @@ public class NanoCadAdapter
                 foreach (var wall in edge.Walls)
                 {
                     editor.WriteMessage($"--- {wall.Position} {wall.Width}" + (wall.Position == WallPosition.Inside ? $" смежное помещение: {wall.AdjacentSpace!.Number} {wall.AdjacentSpace.Name}" : string.Empty));
+                    foreach (var opening in wall.Openings)
+                    {
+                        editor.WriteMessage($"------ {opening.Name} W:{opening.Width}, H:{opening.Height}");
+                    }
                 }
                 PrintPolygons(edge.Walls.Select(x => x.Polygon).ToList(), color);
                 PrintPolygons(edge.Walls.SelectMany(x => x.Openings).Select(x => x.Polygon).ToList(), color);
@@ -137,16 +145,6 @@ public class NanoCadAdapter
                     }
                 }
                 
-                // находим пересечение границы помещения с проемом
-                foreach (var nanocadOpening in nanocadOpenings)
-                {
-                    var intersection = nanocadOpening.GetPolygon().Intersection(spaceEdge.LineString);    
-                    if (Math.Round(intersection.Length) > 0)
-                    {
-                        spaceEdge.ModelOpenings.Add(nanocadOpening);
-                    }
-                }
-                
                 spaceDto.Edges.Add(spaceEdge);
             }
 
@@ -175,7 +173,7 @@ public class NanoCadAdapter
                         Id = modelWall.Id.ToLong(),
                         Position = modelWall.GetPosition(),
                         Thickness = modelWall.Thickness,
-                        Polygon = CreateWallPolygon(edge.LineString, 0, modelWall.Thickness),
+                        Polygon = CreateWallPolygon(edge.LineString, modelWall.Thickness, 0),
                         Width = edge.LineString.Length + GetWallThickness(prevEdge.ModelWall!) +  GetWallThickness(nextEdge.ModelWall!),
                         Height = space.Height
                     };
@@ -247,6 +245,9 @@ public class NanoCadAdapter
                             {
                                 Id = Guid.NewGuid(),
                                 Polygon = opening.GetPolygon(),
+                                Name = opening.Name,
+                                Width = opening.Width,
+                                Height = opening.Height,
                             });
                         }
                     }
@@ -259,52 +260,9 @@ public class NanoCadAdapter
     /// Создание полигона для фактического участка стены помещения
     /// </summary>
     private Polygon CreateWallPolygon(LineString baseLine, double internalOffset, double externalOffset)
-    {
-        var startPoint = baseLine.StartPoint;
-        var endPoint = baseLine.EndPoint;
-        
-        // находим направление отрезка
-        var dx = endPoint.X - startPoint.X;
-        var dy = endPoint.Y - startPoint.Y;
-        var len = Math.Sqrt(dx * dx + dy * dy);
-
-        dx /= len;
-        dy /= len;
-
-        // находим нормаль
-        var nx = -dy;
-        var ny = dx;
-
-        return new Polygon(new LinearRing(new[]
-        {
-            new Coordinate(startPoint.X + nx * internalOffset, startPoint.Y +  ny * internalOffset).Round(),
-            new Coordinate(endPoint.X + nx * internalOffset, endPoint.Y +  ny * internalOffset).Round(),
-            new Coordinate(endPoint.X - nx * externalOffset, endPoint.Y -  ny * externalOffset).Round(),
-            new Coordinate(startPoint.X - nx * externalOffset, startPoint.Y -  ny * externalOffset).Round(),
-            new Coordinate(startPoint.X + nx * internalOffset, startPoint.Y +  ny * internalOffset).Round(),
-        }));
-    }
-
-    private List<WallDto> GetWallsFromModel()
-    {
-        var modelWalls = FindObjects<LinearBuildingWall>().ToList();
-        
-        var result = new List<WallDto>();
-        foreach (var modelWall in modelWalls)
-        {
-            result.Add(
-                new WallDto
-                {
-                    Id = long.Parse(modelWall.Id.ToString()),
-                    Position = modelWall.GetPosition(),
-                    Thickness = modelWall.Thickness,
-                    Polygon = modelWall.GetPolygon(),
-                });
-        }
-        return result;
-    }
+        => MyGeometry.CreatePolygonByLine(baseLine, internalOffset, externalOffset);
     
-    private static void MoveSpaceInsideEdges(SpaceDto space)
+    private static void MoveSpaceInsideEdges(SpaceDto space) //TODO: перенести это в геометрию
     {
         // GeometryFactory factory = new GeometryFactory(); //TODO: использовать factory?
         var spaceEdges = space.Edges;
@@ -317,25 +275,27 @@ public class NanoCadAdapter
                 var nextEdge = spaceEdges[i == spaceEdges.Count - 1 ? 0 : i + 1];
                 var offset = - currentEdge.ModelWall!.Thickness / 2;
                 
-                // находим направление отрезка
-                var dx = currentEdge.End.X - currentEdge.Start.X;
-                var dy = currentEdge.End.Y - currentEdge.Start.Y;
-                var len = Math.Sqrt(dx * dx + dy * dy);
+                // // находим направление отрезка
+                // var dx = currentEdge.End.X - currentEdge.Start.X;
+                // var dy = currentEdge.End.Y - currentEdge.Start.Y;
+                // var len = Math.Sqrt(dx * dx + dy * dy);
+                //
+                // dx /= len;
+                // dy /= len;
+                //
+                // // находим нормаль
+                // var nx = -dy;
+                // var ny = dx;
+                //
+                // // новые точки после сдвига
+                // var newStart = new Coordinate(currentEdge.Start.X + nx * offset, currentEdge.Start.Y + ny * offset);
+                // var newEnd = new Coordinate(currentEdge.End.X + nx * offset, currentEdge.End.Y + ny * offset);
 
-                dx /= len;
-                dy /= len;
-
-                // находим нормаль
-                var nx = -dy;
-                var ny = dx;
-
-                // новые точки после сдвига
-                var newStart = new Coordinate(currentEdge.Start.X + nx * offset, currentEdge.Start.Y + ny * offset);
-                var newEnd = new Coordinate(currentEdge.End.X + nx * offset, currentEdge.End.Y + ny * offset);
+                var newLine = MyGeometry.MoveLine(currentEdge.LineString, offset);
                 
                 // новые точки пересечения
-                var newIntersectionStartPoint = FindIntersectionPoint(newStart, newEnd, previousEdge.Start, previousEdge.End);
-                var newIntersectionEndPoint = FindIntersectionPoint(newStart, newEnd, nextEdge.Start, nextEdge.End);
+                var newIntersectionStartPoint = MyGeometry.FindIntersectionPoint(newLine, previousEdge.LineString);
+                var newIntersectionEndPoint = MyGeometry.FindIntersectionPoint(newLine, nextEdge.LineString);
                 
                 // меняем координаты отрезков
                 previousEdge.ChangeCoordinates(previousEdge.Start, newIntersectionStartPoint);
@@ -345,31 +305,6 @@ public class NanoCadAdapter
         }
     }
     
-    private static Coordinate FindIntersectionPoint(
-        Coordinate firstLineStart, 
-        Coordinate firstLineEnd, 
-        Coordinate secondLineStart, 
-        Coordinate secondLineEnd)
-    {
-        var a1 = firstLineEnd.Y - firstLineStart.Y;
-        var b1 = firstLineStart.X - firstLineEnd.X;
-        var c1 = a1 * firstLineStart.X + b1 * firstLineStart.Y;
-
-        var a2 = secondLineEnd.Y - secondLineStart.Y;
-        var b2 = secondLineStart.X - secondLineEnd.X;
-        var c2 = a2 * secondLineStart.X + b2 * secondLineStart.Y;
-
-        var det = a1 * b2 - a2 * b1;
-
-        if (Math.Abs(det) < 1e-10)
-            throw new Exception("Не удалось найти точку пересечения: линии параллельны");
-
-        var x = (b2 * c1 - b1 * c2) / det;
-        var y = (a1 * c2 - a2 * c1) / det;
-
-        return new Coordinate(x, y);
-    }
-
     private static IEnumerable<T> FindObjects<T>() where T: IParametricObject
     {
         var document = Application.DocumentManager.MdiActiveDocument;

@@ -1,6 +1,6 @@
 ﻿using NetTopologySuite.Geometries;
 
-namespace HeatLoss.BimAdapters.Extensions;
+namespace HeatLoss.Geometry.Extensions;
 
 public static class CoordinateExtensions
 {
