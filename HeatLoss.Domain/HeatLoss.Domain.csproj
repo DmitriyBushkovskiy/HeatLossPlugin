@@ -4,7 +4,6 @@
         <TargetFramework>net6.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     </PropertyGroup>
 
     <ItemGroup>
@@ -31,10 +30,13 @@
             <Private>False</Private>
         </Reference>
     </ItemGroup>
-
+    
     <ItemGroup>
-      <ProjectReference Include="..\HeatLoss.BimAdapters\HeatLoss.BimAdapters.csproj" />
-      <ProjectReference Include="..\HeatLoss.Domain\HeatLoss.Domain.csproj" />
+      <PackageReference Include="NetTopologySuite" Version="2.6.0" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <Folder Include="Calculation\" />
     </ItemGroup>
 
 </Project>
