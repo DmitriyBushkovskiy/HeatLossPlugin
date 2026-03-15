@@ -1,5 +1,7 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
 using HeatLoss.BimAdapters.DTO;
+using HeatLoss.BimAdapters.Models;
+using HeatLoss.Geometry;
 using HeatLoss.Geometry.Extensions;
 using NetTopologySuite.Geometries;
 using Teigha.Geometry;
@@ -22,19 +24,36 @@ public static class LinearBuildingWallExtensions
         }
     }
     
+    private static WallAxis GetAxis(this LinearBuildingWall wall)
+    {
+        return Enum.Parse<WallAxis>(wall.GetElementData().Parameters.First(x => x.Name == "AEC_PART_AXIS").Value);
+    }
+    
     public static Polygon GetPolygon(this LinearBuildingWall wall)
     {
-        var perpVector = wall.XDir.RotateBy(- Math.PI / 2, Vector3d.ZAxis) * wall.Thickness;
-        var perpStartPoint = wall.StartPoint + perpVector;
-        var perpEndPoint = wall.EndPoint + perpVector;
-
-        return new Polygon(new LinearRing(new[]
+        var axis = wall.GetAxis();
+        var leftOffset = axis switch
         {
-            new Coordinate(wall.StartPoint.X, wall.StartPoint.Y).Round(),
-            new Coordinate(wall.EndPoint.X, wall.EndPoint.Y).Round(),
-            new Coordinate(perpEndPoint.X, perpEndPoint.Y).Round(),
-            new Coordinate(perpStartPoint.X, perpStartPoint.Y).Round(),
-            new Coordinate(wall.StartPoint.X, wall.StartPoint.Y).Round(),
-        }));
+            WallAxis.Inside => wall.Thickness,
+            WallAxis.Outside => 0,
+            WallAxis.Center => wall.Thickness / 2,
+            _ => throw new Exception()
+        };
+        
+        var rightOffset = axis switch
+        {
+            WallAxis.Inside => 0,
+            WallAxis.Outside => wall.Thickness,
+            WallAxis.Center => wall.Thickness / 2,
+            _ => throw new Exception()
+        };
+        
+        return MyGeometry.CreatePolygonByLine(
+            new LineString( new []{
+                new Coordinate(wall.StartPoint.X, wall.StartPoint.Y).Round(),
+                new Coordinate(wall.EndPoint.X, wall.EndPoint.Y).Round()
+            }),
+            leftOffset,
+            rightOffset);
     }
 }
