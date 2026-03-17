@@ -4,7 +4,6 @@ using HeatLoss.BimAdapters.Models;
 using HeatLoss.Geometry;
 using HeatLoss.Geometry.Extensions;
 using NetTopologySuite.Geometries;
-using Teigha.Geometry;
 
 namespace HeatLoss.BimAdapters.Extensions;
 
@@ -12,7 +11,7 @@ public static class LinearBuildingWallExtensions
 {
     public static WallPosition GetPosition(this LinearBuildingWall wall)
     {
-        var location = wall.GetElementData().Parameters.First(x => x.Name == "LOCATION").Value;
+        var location = wall.GetParameter("LOCATION");
         switch (location)
         {
             case "Снаружи":
@@ -24,9 +23,9 @@ public static class LinearBuildingWallExtensions
         }
     }
     
-    private static WallAxis GetAxis(this LinearBuildingWall wall)
+    private static EntityAxis GetAxis(this LinearBuildingWall wall)
     {
-        return Enum.Parse<WallAxis>(wall.GetElementData().Parameters.First(x => x.Name == "AEC_PART_AXIS").Value);
+        return Enum.Parse<EntityAxis>(wall.GetParameter("AEC_PART_AXIS"));
     }
     
     public static Polygon GetPolygon(this LinearBuildingWall wall)
@@ -34,17 +33,17 @@ public static class LinearBuildingWallExtensions
         var axis = wall.GetAxis();
         var leftOffset = axis switch
         {
-            WallAxis.Inside => wall.Thickness,
-            WallAxis.Outside => 0,
-            WallAxis.Center => wall.Thickness / 2,
+            EntityAxis.Inside => wall.Thickness,
+            EntityAxis.Outside => 0,
+            EntityAxis.Center => wall.Thickness / 2,
             _ => throw new Exception()
         };
         
         var rightOffset = axis switch
         {
-            WallAxis.Inside => 0,
-            WallAxis.Outside => wall.Thickness,
-            WallAxis.Center => wall.Thickness / 2,
+            EntityAxis.Inside => 0,
+            EntityAxis.Outside => wall.Thickness,
+            EntityAxis.Center => wall.Thickness / 2,
             _ => throw new Exception()
         };
         

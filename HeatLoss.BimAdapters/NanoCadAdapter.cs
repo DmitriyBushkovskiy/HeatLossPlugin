@@ -1,9 +1,7 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
-using BIMStructureMgd.ObjectProperties;
 using HeatLoss.BimAdapters.DTO;
 using HeatLoss.BimAdapters.Extensions;
 using HeatLoss.Geometry;
-using HeatLoss.Geometry.Extensions;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;
 using NetTopologySuite.Geometries;
@@ -21,47 +19,64 @@ public class NanoCadAdapter
     private List<SpaceEntity> nanocadSpaces;
     private List<LinearBuildingWall> nanocadWalls;
     private List<BuildingOpening> nanocadOpenings;
+    // private List<CoordinateGridRef> nanocadGrids;
     
     private readonly List<SpaceDto> _spaceDtos = new();
     
     public void InitBuildingInfo()
     {
+        var document = Application.DocumentManager.MdiActiveDocument;
+        var editor = document.Editor;
+        
         nanocadSpaces = FindObjects<SpaceEntity>().ToList();
         nanocadWalls = FindObjects<LinearBuildingWall>().ToList();
         nanocadOpenings = FindObjects<BuildingOpening>().ToList();
+        // nanocadGrids = FindObjects<CoordinateGridRef>().ToList();
         
         CreateSpaces();
+        
+        // validate
+        foreach (var space in _spaceDtos)
+        {
+            var eww = space.Edges.Where(e => e.ModelWall == null);
+            if (eww.Count() > 0)
+            {
+                editor.WriteMessage($"----- Room: {space.Number}. {eww.Count()} edges without wall");
+                foreach (var e in eww)
+                {
+                    Print(new []{new Line(new Point3d(e.Start.X, e.Start.Y, space.BottomLevel), new Point3d(e.End.X, e.End.Y, space.BottomLevel))}, Color.FromRgb(255, 0, 0));
+                }
+            }
+        }
+        
+        MoveSpaceInsideEdges();
 
         CreateWalls();
 
         CreateOpenings();
         
         
-        
-        
         // далее удалить
-        var document = Application.DocumentManager.MdiActiveDocument;
-        var editor = document.Editor;
-        
-        for (int i = 0; i < _spaceDtos.Count; i++)
+ 
+        var orderedSpaces = _spaceDtos.OrderBy(x => x.Number).ToList();
+        for (int i = 0; i < orderedSpaces.Count; i++)
         {
-            var s = _spaceDtos[i];
+            var s = orderedSpaces[i];
             var color = Color.FromColorIndex(ColorMethod.ByAci, (short)i);
-            // PrintPolygons(new []{ s.GetPolygon()}, color, 6000);
+            PrintPolygons(new []{ s.GetPolygon()}, color, s.BottomLevel);
             editor.WriteMessage($"Помещение {s.Number} {s.Name}");
-            foreach (var edge in s.Edges)
+            var walls = s.Edges.SelectMany(x => x.Walls).OrderBy(x => x.AdjacentSpace?.Number).ToList();
+            
+            foreach (var wall in walls)
             {
-                foreach (var wall in edge.Walls)
+                editor.WriteMessage($"--- {wall.Position} W:{wall.Width} H:{wall.Height} Z:{wall.BottomLevel}" + (wall.Position == WallPosition.Inside ? $" пом: {wall.AdjacentSpace!.Number}" : string.Empty));
+                foreach (var opening in wall.Openings)
                 {
-                    editor.WriteMessage($"--- {wall.Position} {wall.Width}" + (wall.Position == WallPosition.Inside ? $" смежное помещение: {wall.AdjacentSpace!.Number} {wall.AdjacentSpace.Name}" : string.Empty));
-                    foreach (var opening in wall.Openings)
-                    {
-                        editor.WriteMessage($"------ {opening.Name} W:{opening.Width}, H:{opening.Height}");
-                    }
+                    editor.WriteMessage($"------ {opening.Name} W:{opening.Width}, H:{opening.Height} Z:{opening.BottomLevel}");
                 }
-                PrintPolygons(edge.Walls.Select(x => x.Polygon).ToList(), color);
-                PrintPolygons(edge.Walls.SelectMany(x => x.Openings).Select(x => x.Polygon).ToList(), color);
             }
+            PrintPolygons(walls.Select(x => x.Polygon).ToList(), color, s.BottomLevel);
+            PrintPolygons(walls.SelectMany(x => x.Openings).Select(x => x.Polygon).ToList(), color, s.BottomLevel);
         }
     }
     
@@ -93,7 +108,7 @@ public class NanoCadAdapter
         tr.Commit();
     }
 
-    private void PrintPolygons(IEnumerable<Polygon> polygons, Color color, int level = 7000)
+    private void PrintPolygons(IEnumerable<Polygon> polygons, Color color, double level = 7000)
     {
         var buildingPerimeterCoordinates = polygons.Select(x => x.ExteriorRing.Coordinates);
         var lines = new List<Line>();
@@ -124,8 +139,11 @@ public class NanoCadAdapter
                 // создаем сторону помещения
                 var spaceEdge = new SpaceEdgeDto(currentCoordinate, nextCoordinate);
                 
+                var possibleWalls = nanocadWalls
+                    .Where(w => spaceDto.HaveVerticalIntersection(w))
+                    .ToList();
                 // находим стену, которой принадлежит граница помещения
-                foreach (var nanocadWall in nanocadWalls)
+                foreach (var nanocadWall in possibleWalls)
                 {
                     var intersection = nanocadWall.GetPolygon().Intersection(spaceEdge.LineString);    
                     // проверяем что есть пересечение, и это не пересечение с торцом стены
@@ -136,7 +154,11 @@ public class NanoCadAdapter
                 }
                 
                 // находим проемы, которые находятся на границе помещения
-                foreach (var nanocadOpening in nanocadOpenings)
+                var possibleOpenings = nanocadOpenings
+                    .Where(o => spaceDto.IsOpeningBelong(o))
+                    .ToList();
+                
+                foreach (var nanocadOpening in possibleOpenings)
                 {
                     var intersection = nanocadOpening.GetPolygon().Intersection(spaceEdge.LineString);    
                     if (Math.Round(intersection.Length) > 0) 
@@ -144,11 +166,8 @@ public class NanoCadAdapter
                         spaceEdge.ModelOpenings.Add(nanocadOpening);
                     }
                 }
-                
                 spaceDto.Edges.Add(spaceEdge);
             }
-
-            MoveSpaceInsideEdges(spaceDto);
             _spaceDtos.Add(spaceDto);
         }
     }
@@ -175,14 +194,18 @@ public class NanoCadAdapter
                         Thickness = modelWall.Thickness,
                         Polygon = CreateWallPolygon(edge.LineString, modelWall.Thickness, 0),
                         Width = edge.LineString.Length + GetWallThickness(prevEdge.ModelWall!) +  GetWallThickness(nextEdge.ModelWall!),
-                        Height = space.Height
+                        Height = space.Height,
+                        BottomLevel = space.BottomLevel
                     };
                     edge.Walls.Add(wall);
                 }
                 else if (modelWall.GetPosition() == WallPosition.Inside)
                 {
-                    // получаем помещения, которые контактируют с той же стеной
-                    var connectedSpaces = _spaceDtos.Where(s => s.Edges.Any(e => e.ModelWall!.Id.ToLong() == modelWall.Id.ToLong())).ToList();
+                    // получаем помещения, которые контактируют с той же стеной 
+                    var connectedSpaces = _spaceDtos
+                        .Where(s => s.Edges.Any(e => e.ModelWall!.Id.ToLong() == modelWall.Id.ToLong())
+                        && s.HaveVerticalIntersection(space))
+                        .ToList();
                     foreach (var anotherSpace in connectedSpaces)
                     {
                         // ищем пересечения с другими границами, которые контактируют с той же стеной
@@ -200,7 +223,8 @@ public class NanoCadAdapter
                                         Polygon = CreateWallPolygon(ls, modelWall.Thickness / 2, modelWall.Thickness / 2),
                                         AdjacentSpace = anotherSpace,
                                         Width = intersection.Length,
-                                        Height = space.Height,
+                                        Height = space.GetVerticalIntersectionLenght(anotherSpace),
+                                        BottomLevel = space.GetVerticalIntersectionLevels(anotherSpace).bottom
                                     };
                                     edge.Walls.Add(wall);
                                     // w.BelongToSpaces.Add(space);
@@ -213,8 +237,6 @@ public class NanoCadAdapter
                 else
                     throw new NotImplementedException(); // TODO: remove?
             }
-            
-            // space.SetWallSizes();
         }
         
         double GetWallThickness(LinearBuildingWall wall)
@@ -236,7 +258,10 @@ public class NanoCadAdapter
             {
                 foreach (var wall in edge.Walls)
                 {
-                    foreach (var opening in edge.ModelOpenings)
+                    var possibleOpenings = edge.ModelOpenings 
+                        .Where(o => wall.IsOpeningBelong(o))
+                        .ToList();
+                    foreach (var opening in possibleOpenings)
                     {
                         var intersection = wall.Polygon.Intersection(opening.GetPolygon());
                         if (!intersection.IsEmpty)
@@ -248,6 +273,7 @@ public class NanoCadAdapter
                                 Name = opening.Name,
                                 Width = opening.Width,
                                 Height = opening.Height,
+                                BottomLevel = opening.BasePoint.Z
                             });
                         }
                     }
@@ -262,50 +288,40 @@ public class NanoCadAdapter
     private Polygon CreateWallPolygon(LineString baseLine, double internalOffset, double externalOffset)
         => MyGeometry.CreatePolygonByLine(baseLine, internalOffset, externalOffset);
     
-    private static void MoveSpaceInsideEdges(SpaceDto space) //TODO: перенести это в геометрию
+    /// <summary>
+    /// Сдвиг внутренних граней помещения до середины внутренней стены
+    /// </summary>
+    private void MoveSpaceInsideEdges() //TODO: перенести это в геометрию
     {
-        // GeometryFactory factory = new GeometryFactory(); //TODO: использовать factory?
-        var spaceEdges = space.Edges;
-        for (int i = 0; i < spaceEdges.Count; i++)
+        foreach (var space in _spaceDtos)
         {
-            var currentEdge = spaceEdges[i];
-            if (currentEdge.ModelWall!.GetPosition() == WallPosition.Inside) //TODO:: реализовать для нескольких стен, в т.ч. разных
+            // GeometryFactory factory = new GeometryFactory(); //TODO: использовать factory?
+            var spaceEdges = space.Edges;
+            for (int i = 0; i < spaceEdges.Count; i++)
             {
-                var previousEdge = spaceEdges[i == 0 ? spaceEdges.Count - 1 : i - 1];
-                var nextEdge = spaceEdges[i == spaceEdges.Count - 1 ? 0 : i + 1];
-                var offset = - currentEdge.ModelWall!.Thickness / 2;
-                
-                // // находим направление отрезка
-                // var dx = currentEdge.End.X - currentEdge.Start.X;
-                // var dy = currentEdge.End.Y - currentEdge.Start.Y;
-                // var len = Math.Sqrt(dx * dx + dy * dy);
-                //
-                // dx /= len;
-                // dy /= len;
-                //
-                // // находим нормаль
-                // var nx = -dy;
-                // var ny = dx;
-                //
-                // // новые точки после сдвига
-                // var newStart = new Coordinate(currentEdge.Start.X + nx * offset, currentEdge.Start.Y + ny * offset);
-                // var newEnd = new Coordinate(currentEdge.End.X + nx * offset, currentEdge.End.Y + ny * offset);
+                var currentEdge = spaceEdges[i];
+                if (currentEdge.ModelWall!.GetPosition() == WallPosition.Inside) //TODO:: реализовать для нескольких стен, в т.ч. разных
+                {
+                    var previousEdge = spaceEdges[i == 0 ? spaceEdges.Count - 1 : i - 1];
+                    var nextEdge = spaceEdges[i == spaceEdges.Count - 1 ? 0 : i + 1];
+                    var offset = - currentEdge.ModelWall!.Thickness / 2;
 
-                var newLine = MyGeometry.MoveLine(currentEdge.LineString, offset);
-                
-                // новые точки пересечения
-                var newIntersectionStartPoint = MyGeometry.FindIntersectionPoint(newLine, previousEdge.LineString);
-                var newIntersectionEndPoint = MyGeometry.FindIntersectionPoint(newLine, nextEdge.LineString);
-                
-                // меняем координаты отрезков
-                previousEdge.ChangeCoordinates(previousEdge.Start, newIntersectionStartPoint);
-                nextEdge.ChangeCoordinates(newIntersectionEndPoint, nextEdge.End);
-                currentEdge.ChangeCoordinates(newIntersectionStartPoint, newIntersectionEndPoint);
+                    var newLine = MyGeometry.MoveLine(currentEdge.LineString, offset);
+                    
+                    // новые точки пересечения
+                    var newIntersectionStartPoint = MyGeometry.FindIntersectionPoint(newLine, previousEdge.LineString);
+                    var newIntersectionEndPoint = MyGeometry.FindIntersectionPoint(newLine, nextEdge.LineString);
+                    
+                    // меняем координаты отрезков
+                    previousEdge.ChangeCoordinates(previousEdge.Start, newIntersectionStartPoint);
+                    nextEdge.ChangeCoordinates(newIntersectionEndPoint, nextEdge.End);
+                    currentEdge.ChangeCoordinates(newIntersectionStartPoint, newIntersectionEndPoint);
+                }
             }
         }
     }
     
-    private static IEnumerable<T> FindObjects<T>() where T: IParametricObject
+    private static IEnumerable<T> FindObjects<T>() where T: Entity
     {
         var document = Application.DocumentManager.MdiActiveDocument;
         var editor = document.Editor;

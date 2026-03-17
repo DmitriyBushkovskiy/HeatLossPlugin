@@ -27,4 +27,10 @@ public static class SpaceEntityExtensions
             .GetVertex2ds()
             .Select(x => new Coordinate(x.Position.X, x.Position.Y).Round());
     }
+    
+    private static string GetParameter(this SpaceEntity space, string parameterName)
+        => space.GetElementData().Parameters.First(x => x.Name == parameterName).Value;
+    
+    public static double GetBottomLevel(this SpaceEntity space)
+        => double.Parse(space.GetParameter("AEC_ELEMENT_POS_Z"));
 }

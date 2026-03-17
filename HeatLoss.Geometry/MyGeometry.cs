@@ -64,29 +64,6 @@ public static class MyGeometry
     /// </summary>
     public static Polygon CreatePolygonByLine(LineString line, double leftOffset, double rightOffset)
     {
-        // var startPoint = line.StartPoint;
-        // var endPoint = line.EndPoint;
-        //
-        // // находим направление отрезка
-        // var dx = endPoint.X - startPoint.X;
-        // var dy = endPoint.Y - startPoint.Y;
-        // var len = Math.Sqrt(dx * dx + dy * dy);
-        //
-        // dx /= len;
-        // dy /= len;
-        //
-        // // находим нормаль
-        // var nx = -dy;
-        // var ny = dx;
-        //
-        // return new Polygon(new LinearRing(new[]
-        // {
-        //     new Coordinate(startPoint.X + nx * leftOffset, startPoint.Y +  ny * leftOffset).Round(),
-        //     new Coordinate(endPoint.X + nx * leftOffset, endPoint.Y +  ny * leftOffset).Round(),
-        //     new Coordinate(endPoint.X - nx * rightOffset, endPoint.Y -  ny * rightOffset).Round(),
-        //     new Coordinate(startPoint.X - nx * rightOffset, startPoint.Y -  ny * rightOffset).Round(),
-        //     new Coordinate(startPoint.X + nx * leftOffset, startPoint.Y +  ny * leftOffset).Round(),
-        // }));
         var leftLine = MoveLine(line, - leftOffset);
         var rightLine = MoveLine(line, rightOffset);
 

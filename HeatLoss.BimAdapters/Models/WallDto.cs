@@ -1,4 +1,6 @@
-﻿using NetTopologySuite.Geometries;
+﻿using BIMStructureMgd.DatabaseObjects;
+using HeatLoss.BimAdapters.Extensions;
+using NetTopologySuite.Geometries;
 
 namespace HeatLoss.BimAdapters.DTO;
 
@@ -12,10 +14,11 @@ public class WallDto
     public double Thickness { get; set; }
     public double Width { get; set; }
     public double Height { get; set; }
+    public double BottomLevel { get; set; }
     public SpaceDto? AdjacentSpace  { get; set; } // смежное помещение для внутренней стены
 
-    // public WallDto(long id)
-    // {
-    //     Id = id;
-    // }
+    public bool IsOpeningBelong(BuildingOpening opening)
+    {
+        return opening.BasePoint.Z >= BottomLevel && opening.BasePoint.Z + opening.Height <= BottomLevel + Height;
+    }
 }
