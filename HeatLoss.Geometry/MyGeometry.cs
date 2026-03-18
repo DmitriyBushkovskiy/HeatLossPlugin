@@ -7,10 +7,11 @@ namespace HeatLoss.Geometry;
 
 public static class MyGeometry
 {
-    public static IEnumerable<NetTopologySuite.Geometries.Geometry> GetCommonPerimeter(IEnumerable<Polygon> polygons)
+    /// <summary>
+    /// Получение общего периметра для нескольких полигонов
+    /// </summary>
+    public static IEnumerable<Polygon> GetCommonPerimeters(IEnumerable<Polygon> polygons, double offset)
     {
-        double offset = 1000;
-
         var bufferParams = new BufferParameters
         {
             JoinStyle = JoinStyle.Mitre,
@@ -29,6 +30,46 @@ public static class MyGeometry
             MultiPolygon mp => mp.Geometries.Cast<Polygon>(),
             _ => throw new Exception()
         };
+    }
+    
+    /// <summary>
+    /// Построение полигонов с отступом
+    /// </summary>
+    public static List<Polygon> CreatePolygonsWithOffset(List<Polygon> previousZones, double offset)
+    {
+        if (previousZones.Count == 0)
+            return new List<Polygon>();
+        
+        var bufferParams = new BufferParameters
+        {
+            JoinStyle = JoinStyle.Mitre,
+            EndCapStyle = EndCapStyle.Flat,
+            QuadrantSegments = 1,
+            MitreLimit = 10
+        };
+        
+        var result = new List<Polygon>();
+
+        var newZonePoligons = previousZones
+            .Select(z => BufferOp.Buffer(z, offset, bufferParams));
+
+        foreach (var zone in newZonePoligons)
+        {
+            switch (zone)
+            {
+                case Polygon p:
+                    result.Add(p);
+                    break;
+
+                case MultiPolygon mp:
+                    result.AddRange(mp.Geometries.Cast<Polygon>());
+                    break;
+
+                default:
+                    throw new Exception();
+            }
+        }
+        return result;
     }
     
     public static Coordinate FindIntersectionPoint(

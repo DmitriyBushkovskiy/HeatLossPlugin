@@ -5,6 +5,7 @@ using HeatLoss.Geometry;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;
 using NetTopologySuite.Geometries;
+using NetTopologySuite.Operation.Union;
 using Teigha.Colors;
 using Teigha.DatabaseServices;
 using Teigha.Geometry;
@@ -19,7 +20,13 @@ public class NanoCadAdapter
     private List<SpaceEntity> nanocadSpaces;
     private List<LinearBuildingWall> nanocadWalls;
     private List<BuildingOpening> nanocadOpenings;
-    // private List<CoordinateGridRef> nanocadGrids;
+    private List<CoordinateGridRef> nanocadGrids;
+    
+    private List<Polygon> firstFloorGeometry;
+    private List<Polygon> secondFloorGeometry;
+    private List<Polygon> thirdFloorGeometry;
+    private List<Polygon> fourthFloorGeometry;
+    
     
     private readonly List<SpaceDto> _spaceDtos = new();
     
@@ -31,7 +38,7 @@ public class NanoCadAdapter
         nanocadSpaces = FindObjects<SpaceEntity>().ToList();
         nanocadWalls = FindObjects<LinearBuildingWall>().ToList();
         nanocadOpenings = FindObjects<BuildingOpening>().ToList();
-        // nanocadGrids = FindObjects<CoordinateGridRef>().ToList();
+        nanocadGrids = FindObjects<CoordinateGridRef>().ToList();
         
         CreateSpaces();
         
@@ -54,6 +61,8 @@ public class NanoCadAdapter
         CreateWalls();
 
         CreateOpenings();
+
+        CreateFloorAreas();
         
         
         // далее удалить
@@ -67,17 +76,34 @@ public class NanoCadAdapter
             editor.WriteMessage($"Помещение {s.Number} {s.Name}");
             var walls = s.Edges.SelectMany(x => x.Walls).OrderBy(x => x.AdjacentSpace?.Number).ToList();
             
-            foreach (var wall in walls)
-            {
-                editor.WriteMessage($"--- {wall.Position} W:{wall.Width} H:{wall.Height} Z:{wall.BottomLevel}" + (wall.Position == WallPosition.Inside ? $" пом: {wall.AdjacentSpace!.Number}" : string.Empty));
-                foreach (var opening in wall.Openings)
-                {
-                    editor.WriteMessage($"------ {opening.Name} W:{opening.Width}, H:{opening.Height} Z:{opening.BottomLevel}");
-                }
-            }
+            // стены и проемы
+            // foreach (var wall in walls)
+            // {
+            //     editor.WriteMessage($"--- {wall.Position} W:{wall.Width} H:{wall.Height} Z:{wall.BottomLevel}" + (wall.Position == WallPosition.Inside ? $" пом: {wall.AdjacentSpace!.Number}" : string.Empty));
+            //     foreach (var opening in wall.Openings)
+            //     {
+            //         editor.WriteMessage($"------ {opening.Name} W:{opening.Width}, H:{opening.Height} Z:{opening.BottomLevel}");
+            //     }
+            // }
             PrintPolygons(walls.Select(x => x.Polygon).ToList(), color, s.BottomLevel);
-            PrintPolygons(walls.SelectMany(x => x.Openings).Select(x => x.Polygon).ToList(), color, s.BottomLevel);
+            // PrintPolygons(walls.SelectMany(x => x.Openings).Select(x => x.Polygon).ToList(), color, s.BottomLevel);
         }
+        
+        // зоны помещений первого этажа
+        var fistFloor = nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).First(); //TODO: что если несколько сеток осей?
+        var firstFloorSpaces = _spaceDtos.Where(x => Math.Abs(x.BottomLevel - fistFloor.Position) < 1).OrderBy(x => x.Number).ToList();
+        foreach (var s in firstFloorSpaces)
+        {
+            editor.WriteMessage($"--- {s.Number} 1:{s.Floor.FirstFloorAreaArea} 2:{s.Floor.SecondFloorAreaArea}, 3:{s.Floor.ThirdFloorAreaArea} 4:{s.Floor.FourthFloorAreaArea}");
+        }
+        
+        PrintPolygons(firstFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 1), 0);
+        PrintPolygons(secondFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 2), 0);
+        PrintPolygons(thirdFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 3), 0);
+        PrintPolygons(fourthFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 4), 0);
+        
+        
+        editor.WriteMessage($"!!!! Finished !!!!!");
     }
     
     private void Print(IEnumerable<Drawable> geometries, Color color)
@@ -279,6 +305,44 @@ public class NanoCadAdapter
                     }
                 }
             }
+        }
+    }
+
+    private void CreateFloorAreas()
+    {
+        var fistFloor = nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).First(); //TODO: что если несколько сеток осей?
+        var firstFloorSpaces = _spaceDtos.Where(x => Math.Abs(x.BottomLevel - fistFloor.Position) < 1).ToList();
+        firstFloorGeometry = MyGeometry.GetCommonPerimeters(firstFloorSpaces.Select(x => x.GetPolygon()), 1000).ToList();
+        secondFloorGeometry = MyGeometry.CreatePolygonsWithOffset(firstFloorGeometry, -2000);
+        thirdFloorGeometry = MyGeometry.CreatePolygonsWithOffset(secondFloorGeometry, -2000);
+        fourthFloorGeometry = MyGeometry.CreatePolygonsWithOffset(thirdFloorGeometry, -2000);
+
+        var fourthArea = UnaryUnionOp.Union(fourthFloorGeometry);
+        var thirdArea = UnaryUnionOp.Union(thirdFloorGeometry);
+        var secondArea = UnaryUnionOp.Union(secondFloorGeometry);
+        var firstArea = UnaryUnionOp.Union(firstFloorGeometry);
+        
+        foreach (var space in firstFloorSpaces)
+        {
+            var floor = new FloorDto();
+            var spacePolygon = UnaryUnionOp.Union(space.GetPolygon());
+            if (fourthArea.Area > 0)
+            {
+                floor.FourthFloorAreaArea = Math.Round(fourthArea.Intersection(spacePolygon).Area/1000000, 2);
+            }
+            if (thirdArea.Area > 0)
+            {
+                floor.ThirdFloorAreaArea = Math.Round(thirdArea.Intersection(spacePolygon).Area/1000000 - floor.FourthFloorAreaArea, 2);
+            }
+            if (secondArea.Area > 0)
+            {
+                floor.SecondFloorAreaArea = Math.Round(secondArea.Intersection(spacePolygon).Area/1000000 - floor.ThirdFloorAreaArea - floor.FourthFloorAreaArea, 2);
+            }
+            if (firstArea.Area > 0)
+            {
+                floor.FirstFloorAreaArea = Math.Round(firstArea.Intersection(spacePolygon).Area/1000000 - floor.SecondFloorAreaArea - floor.ThirdFloorAreaArea - floor.FourthFloorAreaArea, 2);
+            }
+            space.Floor = floor;
         }
     }
 

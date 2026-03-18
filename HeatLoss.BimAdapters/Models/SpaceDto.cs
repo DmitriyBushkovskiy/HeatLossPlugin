@@ -12,7 +12,7 @@ public class SpaceDto
     public string Name { get; init; }
     // public List<WallDto> Walls { get; init; }
     // public List<OpeningDto> Openings { get; init; }
-    // public FloorDto Floor { get; init; }
+    public FloorDto? Floor { get; set; }
     // public CeilingDto Ceiling { get; init; }
     public List<SpaceEdgeDto> Edges { get; set; } = new();
     public double BottomLevel  { get; set; }
