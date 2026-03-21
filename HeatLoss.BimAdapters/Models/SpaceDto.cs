@@ -13,7 +13,7 @@ public class SpaceDto
     // public List<WallDto> Walls { get; init; }
     // public List<OpeningDto> Openings { get; init; }
     public FloorDto? Floor { get; set; }
-    // public CeilingDto Ceiling { get; init; }
+    public List<CeilingDto> Ceiling { get; init; } = new();
     public List<SpaceEdgeDto> Edges { get; set; } = new();
     public double BottomLevel  { get; set; }
     public double Height { get; set; }

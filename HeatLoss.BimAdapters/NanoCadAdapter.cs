@@ -63,6 +63,8 @@ public class NanoCadAdapter
         CreateOpenings();
 
         CreateFloorAreas();
+
+        CreateCeilings();
         
         
         // далее удалить
@@ -344,6 +346,55 @@ public class NanoCadAdapter
             }
             space.Floor = floor;
         }
+    }
+
+    private void CreateCeilings()
+    {
+        // var floors = nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).ToArray(); //TODO: что если несколько сеток осей?
+        var spaces = nanocadGrids.Single().AxisZ.Points
+            .OrderBy(x => x.Position)
+            .Select(g => _spaceDtos.Where(x => Math.Abs(x.BottomLevel - g.Position) < 1).ToArray())
+            .ToArray();
+        
+        for (int i = 0; i < spaces.Length; i++)
+        {
+            var currentFloorSpaces = spaces[i];
+            // перекрытия снизу
+            if (i > 0)
+            {
+                var previousFloorSpaces = spaces[i - 1];
+                foreach (var currentFloorSpace in currentFloorSpaces)
+                {
+                    foreach (var previousFloorSpace in previousFloorSpaces)
+                    {
+                        var intersection = currentFloorSpace.GetPolygon().Intersection(previousFloorSpace.GetPolygon());
+                        if (!intersection.IsEmpty && intersection.Area > 0)
+                        {
+                            currentFloorSpace.Ceiling.Add(new CeilingDto(previousFloorSpace,  Math.Round(intersection.Area/1_000_000, 2)));
+                        }
+                    }
+                }
+            }
+            
+            // перекрытия сверху
+            if (i < spaces.Length - 1)
+            {
+                var nextFloorSpaces = spaces[i + 1];
+                foreach (var currentFloorSpace in currentFloorSpaces)
+                {
+                    foreach (var nextFloorSpace in nextFloorSpaces)
+                    {
+                        var intersection = currentFloorSpace.GetPolygon().Intersection(nextFloorSpace.GetPolygon());
+                        if (!intersection.IsEmpty && intersection.Area > 0)
+                        {
+                            currentFloorSpace.Ceiling.Add(new CeilingDto(nextFloorSpace, Math.Round(intersection.Area/1_000_000, 2)));
+                        }
+                    }
+                }
+            }
+        }
+
+        var r = 4;
     }
 
     /// <summary>
