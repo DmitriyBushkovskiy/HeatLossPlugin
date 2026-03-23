@@ -21,6 +21,7 @@ public class NanoCadAdapter
     private List<LinearBuildingWall> nanocadWalls;
     private List<BuildingOpening> nanocadOpenings;
     private List<CoordinateGridRef> nanocadGrids;
+    private List<BuildingSlab> nanocadSlabs;
     
     private List<Polygon> firstFloorGeometry;
     private List<Polygon> secondFloorGeometry;
@@ -39,6 +40,7 @@ public class NanoCadAdapter
         nanocadWalls = FindObjects<LinearBuildingWall>().ToList();
         nanocadOpenings = FindObjects<BuildingOpening>().ToList();
         nanocadGrids = FindObjects<CoordinateGridRef>().ToList();
+        nanocadSlabs = FindObjects<BuildingSlab>().ToList();
         
         CreateSpaces();
         
@@ -211,7 +213,7 @@ public class NanoCadAdapter
             {
                 var edge = space.Edges[i];
                 var modelWall = edge.ModelWall!;
-                if (modelWall.GetPosition() == WallPosition.Outside)
+                if (modelWall.GetPosition() == SurfacePosition.Outside)
                 {
                     var prevEdge = space.Edges[i == 0 ? space.Edges.Count - 1 : i - 1];
                     var nextEdge = space.Edges[i == space.Edges.Count - 1 ? 0 : i + 1];
@@ -227,7 +229,7 @@ public class NanoCadAdapter
                     };
                     edge.Walls.Add(wall);
                 }
-                else if (modelWall.GetPosition() == WallPosition.Inside)
+                else if (modelWall.GetPosition() == SurfacePosition.Inside)
                 {
                     // получаем помещения, которые контактируют с той же стеной 
                     var connectedSpaces = _spaceDtos
@@ -271,8 +273,8 @@ public class NanoCadAdapter
         {
             switch (wall.GetPosition())
             {
-                case WallPosition.Inside: return 0;
-                case WallPosition.Outside: return wall.Thickness;
+                case SurfacePosition.Inside: return 0;
+                case SurfacePosition.Outside: return wall.Thickness;
                 default: throw new ArgumentOutOfRangeException(nameof(wall), wall, null);
             }
         }
@@ -350,51 +352,80 @@ public class NanoCadAdapter
 
     private void CreateCeilings()
     {
-        // var floors = nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).ToArray(); //TODO: что если несколько сеток осей?
-        var spaces = nanocadGrids.Single().AxisZ.Points
+        var spacesByBottom = _spaceDtos.GroupBy(x => x.BottomLevel).ToDictionary(x => x.Key, x => x.ToList());
+        var spacesByTop = _spaceDtos.GroupBy(x => x.BottomLevel + x.Height).ToDictionary(x => x.Key, x => x.ToList());
+        var slabs = nanocadGrids.Single().AxisZ.Points
             .OrderBy(x => x.Position)
-            .Select(g => _spaceDtos.Where(x => Math.Abs(x.BottomLevel - g.Position) < 1).ToArray())
-            .ToArray();
-        
-        for (int i = 0; i < spaces.Length; i++)
+            .ToDictionary(g => g.Position, g => nanocadSlabs.Where(x => Math.Abs(x.BasePoint.Z - g.Position) < 1).ToArray());
+
+        foreach (var currentSpace in _spaceDtos)
         {
-            var currentFloorSpaces = spaces[i];
-            // перекрытия снизу
-            if (i > 0)
+            spacesByTop.TryGetValue(currentSpace.BottomLevel, out var bottomSpaces);
+            spacesByBottom.TryGetValue(currentSpace.BottomLevel + currentSpace.Height, out var topSpaces);
+
+            var bottomSlabs = slabs[currentSpace.BottomLevel];
+            var topSlabs = slabs[currentSpace.BottomLevel + currentSpace.Height];
+            
+            var levels = new[]
             {
-                var previousFloorSpaces = spaces[i - 1];
-                foreach (var currentFloorSpace in currentFloorSpaces)
+                (bottomSpaces, bottomSlabs, false),
+                (topSpaces, topSlabs, true)
+            };
+            
+            foreach (var level in levels)
+            {
+                var anotherSpaces = level.Item1 ?? new List<SpaceDto>();
+                var anotherSlabs = level.Item2;
+                var isTop = level.Item3;
+            
+                foreach (var anotherSpace in anotherSpaces)
                 {
-                    foreach (var previousFloorSpace in previousFloorSpaces)
+                    var floorIntersection = currentSpace.GetPolygon()
+                        .Intersection(anotherSpace.GetPolygon());
+                    if (!floorIntersection.IsEmpty && floorIntersection.Area > 0)
                     {
-                        var intersection = currentFloorSpace.GetPolygon().Intersection(previousFloorSpace.GetPolygon());
-                        if (!intersection.IsEmpty && intersection.Area > 0)
+                        var bottomCeiling = new CeilingDto
                         {
-                            currentFloorSpace.Ceiling.Add(new CeilingDto(previousFloorSpace,  Math.Round(intersection.Area/1_000_000, 2)));
+                            Space = anotherSpace,
+                            Area = Math.Round(floorIntersection.Area / 1_000_000, 2),
+                            Position = SurfacePosition.Inside
+                        };
+                        foreach (var slab in anotherSlabs)
+                        {
+                            var slabIntersection = floorIntersection.Intersection(slab.GetPolygon());
+                            if (!slabIntersection.IsEmpty && slabIntersection.Area > 0 && (bottomCeiling.Slab == null ||
+                                    bottomCeiling.Slab.GetPolygon().Area <
+                                    slabIntersection.Area)) //TODO: сделать реализацию для нескольких перекрытий
+                            {
+                                bottomCeiling.Slab = slab;
+                            }
                         }
+                        currentSpace.Ceiling.Add(bottomCeiling);
                     }
                 }
-            }
-            
-            // перекрытия сверху
-            if (i < spaces.Length - 1)
-            {
-                var nextFloorSpaces = spaces[i + 1];
-                foreach (var currentFloorSpace in currentFloorSpaces)
+
+                // Внешние перекрытия
+                if (anotherSpaces.Count == 0 && isTop)
                 {
-                    foreach (var nextFloorSpace in nextFloorSpaces)
+                    var topCeiling = new CeilingDto
                     {
-                        var intersection = currentFloorSpace.GetPolygon().Intersection(nextFloorSpace.GetPolygon());
-                        if (!intersection.IsEmpty && intersection.Area > 0)
+                        Area = Math.Round(currentSpace.GetPolygon().Area / 1_000_000, 2),
+                        Position = SurfacePosition.Outside,
+                    };
+                    foreach (var slab in anotherSlabs)
+                    {
+                        var slabIntersection = currentSpace.GetPolygon().Intersection(slab.GetPolygon());
+                        if (!slabIntersection.IsEmpty && slabIntersection.Area > 0 && (topCeiling.Slab == null ||
+                                topCeiling.Slab.GetPolygon().Area <
+                                slabIntersection.Area)) //TODO: сделать реализацию для нескольких перекрытий
                         {
-                            currentFloorSpace.Ceiling.Add(new CeilingDto(nextFloorSpace, Math.Round(intersection.Area/1_000_000, 2)));
+                            topCeiling.Slab = slab;
                         }
                     }
+                    currentSpace.Ceiling.Add(topCeiling);
                 }
             }
         }
-
-        var r = 4;
     }
 
     /// <summary>
@@ -415,7 +446,7 @@ public class NanoCadAdapter
             for (int i = 0; i < spaceEdges.Count; i++)
             {
                 var currentEdge = spaceEdges[i];
-                if (currentEdge.ModelWall!.GetPosition() == WallPosition.Inside) //TODO:: реализовать для нескольких стен, в т.ч. разных
+                if (currentEdge.ModelWall!.GetPosition() == SurfacePosition.Inside) //TODO:: реализовать для нескольких стен, в т.ч. разных
                 {
                     var previousEdge = spaceEdges[i == 0 ? spaceEdges.Count - 1 : i - 1];
                     var nextEdge = spaceEdges[i == spaceEdges.Count - 1 ? 0 : i + 1];

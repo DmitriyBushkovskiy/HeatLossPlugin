@@ -1,6 +1,6 @@
 ﻿namespace HeatLoss.BimAdapters.DTO;
 
-public enum WallPosition
+public enum SurfacePosition
 {
     Inside,
     Outside

@@ -9,15 +9,15 @@ namespace HeatLoss.BimAdapters.Extensions;
 
 public static class LinearBuildingWallExtensions
 {
-    public static WallPosition GetPosition(this LinearBuildingWall wall)
+    public static SurfacePosition GetPosition(this LinearBuildingWall wall)
     {
         var location = wall.GetParameter("LOCATION");
         switch (location)
         {
             case "Снаружи":
-                return WallPosition.Outside;
+                return SurfacePosition.Outside;
             case "Внутри":
-                return WallPosition.Inside;
+                return SurfacePosition.Inside;
             default:
                 throw new Exception("Неизвестный параметр LOCATION: " + location);
         }
