@@ -28,8 +28,8 @@ public static class SpaceEntityExtensions
             .Select(x => new Coordinate(x.Position.X, x.Position.Y).Round());
     }
     
-    private static string GetParameter(this SpaceEntity space, string parameterName)
-        => space.GetElementData().Parameters.First(x => x.Name == parameterName).Value;
+    public static string GetParameter(this SpaceEntity space, string parameterName)
+        => space.GetElementData().Parameters.FirstOrDefault(x => x.Name == parameterName)?.Value ?? string.Empty;
     
     public static double GetBottomLevel(this SpaceEntity space)
         => double.Parse(space.GetParameter("AEC_ELEMENT_POS_Z"));

@@ -17,6 +17,7 @@ public class SpaceDto
     public List<SpaceEdgeDto> Edges { get; set; } = new();
     public double BottomLevel  { get; set; }
     public double Height { get; set; }
+    public double Temperature { get; set; }
     
     public SpaceDto(SpaceEntity spaceEntity)
     {
@@ -27,6 +28,7 @@ public class SpaceDto
         Number = spaceEntity.Number;
         BottomLevel = spaceEntity.GetBottomLevel();
         Height = spaceEntity.Height;
+        Temperature = double.TryParse(spaceEntity.GetParameter("HL_SPACE_TEMPERATURE"),  out var temperature) ? temperature : 0;
     }
     
     public Polygon GetPolygon()
