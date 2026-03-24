@@ -1,4 +1,5 @@
-﻿using NetTopologySuite.Geometries;
+﻿using HeatLoss.BimAdapters.Models;
+using NetTopologySuite.Geometries;
 
 namespace HeatLoss.BimAdapters.DTO;
 
@@ -11,4 +12,5 @@ public class OpeningDto
     public double Height { get; set; }
     public double BottomLevel { get; set; }
     public double ThermalConductivity  { get; set; }
+    public OpeningType Type { get; set; }
 }
