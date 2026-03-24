@@ -16,6 +16,7 @@ public class WallDto
     public double Height { get; set; }
     public double BottomLevel { get; set; }
     public SpaceDto? AdjacentSpace  { get; set; } // смежное помещение для внутренней стены
+    public double ThermalConductivity  { get; set; }
 
     public bool IsOpeningBelong(BuildingOpening opening)
     {

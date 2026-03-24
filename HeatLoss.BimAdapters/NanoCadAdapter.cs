@@ -1,4 +1,6 @@
-﻿using BIMStructureMgd.DatabaseObjects;
+﻿using BIMStructureMgd.Common;
+using BIMStructureMgd.DatabaseObjects;
+using BIMStructureMgd.ObjectProperties;
 using HeatLoss.BimAdapters.DTO;
 using HeatLoss.BimAdapters.Extensions;
 using HeatLoss.Geometry;
@@ -22,6 +24,8 @@ public class NanoCadAdapter
     private List<BuildingOpening> nanocadOpenings;
     private List<CoordinateGridRef> nanocadGrids;
     private List<BuildingSlab> nanocadSlabs;
+
+    private Dictionary<string, double> _materialsThermalConductivity = new ();
     
     private List<Polygon> firstFloorGeometry;
     private List<Polygon> secondFloorGeometry;
@@ -41,6 +45,8 @@ public class NanoCadAdapter
         nanocadOpenings = FindObjects<BuildingOpening>().ToList();
         nanocadGrids = FindObjects<CoordinateGridRef>().ToList();
         nanocadSlabs = FindObjects<BuildingSlab>().ToList();
+        
+        GetMaterialsInfo();
         
         CreateSpaces();
         
@@ -225,7 +231,8 @@ public class NanoCadAdapter
                         Polygon = CreateWallPolygon(edge.LineString, modelWall.Thickness, 0),
                         Width = edge.LineString.Length + GetWallThickness(prevEdge.ModelWall!) +  GetWallThickness(nextEdge.ModelWall!),
                         Height = space.Height,
-                        BottomLevel = space.BottomLevel
+                        BottomLevel = space.BottomLevel,
+                        ThermalConductivity = _materialsThermalConductivity[modelWall.GetParameter(Parameter.Names.BuildMaterialId)]
                     };
                     edge.Walls.Add(wall);
                 }
@@ -254,7 +261,8 @@ public class NanoCadAdapter
                                         AdjacentSpace = anotherSpace,
                                         Width = intersection.Length,
                                         Height = space.GetVerticalIntersectionLenght(anotherSpace),
-                                        BottomLevel = space.GetVerticalIntersectionLevels(anotherSpace).bottom
+                                        BottomLevel = space.GetVerticalIntersectionLevels(anotherSpace).bottom,
+                                        ThermalConductivity = _materialsThermalConductivity[modelWall.GetParameter(Parameter.Names.BuildMaterialId)]
                                     };
                                     edge.Walls.Add(wall);
                                     // w.BelongToSpaces.Add(space);
@@ -384,46 +392,64 @@ public class NanoCadAdapter
                         .Intersection(anotherSpace.GetPolygon());
                     if (!floorIntersection.IsEmpty && floorIntersection.Area > 0)
                     {
-                        var bottomCeiling = new CeilingDto
-                        {
-                            Space = anotherSpace,
-                            Area = Math.Round(floorIntersection.Area / 1_000_000, 2),
-                            Position = SurfacePosition.Inside
-                        };
                         foreach (var slab in anotherSlabs)
                         {
                             var slabIntersection = floorIntersection.Intersection(slab.GetPolygon());
-                            if (!slabIntersection.IsEmpty && slabIntersection.Area > 0 && (bottomCeiling.Slab == null ||
-                                    bottomCeiling.Slab.GetPolygon().Area <
-                                    slabIntersection.Area)) //TODO: сделать реализацию для нескольких перекрытий
+                            if (!slabIntersection.IsEmpty && slabIntersection.Area > 0)
                             {
-                                bottomCeiling.Slab = slab;
+                                var ceiling = new CeilingDto
+                                {
+                                    Space = anotherSpace,
+                                    Area = Math.Round(floorIntersection.Area / 1_000_000, 2),
+                                    Position = SurfacePosition.Inside,
+                                    Slab = slab,
+                                    ThermalConductivity = _materialsThermalConductivity[slab.GetParameter(Parameter.Names.BuildMaterialId)],
+                                };
+                                currentSpace.Ceiling.Add(ceiling);
                             }
                         }
-                        currentSpace.Ceiling.Add(bottomCeiling);
                     }
                 }
 
                 // Внешние перекрытия
                 if (anotherSpaces.Count == 0 && isTop)
                 {
-                    var topCeiling = new CeilingDto
-                    {
-                        Area = Math.Round(currentSpace.GetPolygon().Area / 1_000_000, 2),
-                        Position = SurfacePosition.Outside,
-                    };
                     foreach (var slab in anotherSlabs)
                     {
                         var slabIntersection = currentSpace.GetPolygon().Intersection(slab.GetPolygon());
-                        if (!slabIntersection.IsEmpty && slabIntersection.Area > 0 && (topCeiling.Slab == null ||
-                                topCeiling.Slab.GetPolygon().Area <
-                                slabIntersection.Area)) //TODO: сделать реализацию для нескольких перекрытий
+                        if (!slabIntersection.IsEmpty && slabIntersection.Area > 0)
                         {
-                            topCeiling.Slab = slab;
+                            var topCeiling = new CeilingDto
+                            {
+                                Area = Math.Round(currentSpace.GetPolygon().Area / 1_000_000, 2),
+                                Position = SurfacePosition.Outside,
+                                Slab = slab,
+                                ThermalConductivity = _materialsThermalConductivity[slab.GetParameter(Parameter.Names.BuildMaterialId)],
+                            };
+                            currentSpace.Ceiling.Add(topCeiling);
                         }
                     }
-                    currentSpace.Ceiling.Add(topCeiling);
                 }
+            }
+        }
+    }
+
+    private void GetMaterialsInfo()
+    {
+        var materialLibrary = ProjectMaterialLibrary.Current;
+
+        var surfaces = new List<StructuralSurface>();
+        surfaces.AddRange(nanocadSlabs);
+        surfaces.AddRange(nanocadWalls);
+        
+        foreach (var surface in surfaces)
+        {
+            var materialId = surface.GetElementData().GetParameter(Parameter.Names.BuildMaterialId)?.Value;
+            if (materialId != null && !_materialsThermalConductivity.ContainsKey(materialId))
+            {
+                var material = materialLibrary.GetMaterialById(materialId);
+                var thermalConductivity = material.GetParameter("BUILD_THERMAL_CONDUCTIVITY");
+                _materialsThermalConductivity[materialId] = double.TryParse(thermalConductivity, out var result) ? result : 0.0 ;
             }
         }
     }

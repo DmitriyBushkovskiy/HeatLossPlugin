@@ -8,4 +8,5 @@ public class CeilingDto
     public SpaceDto? Space { get; set; }
     public BuildingSlab? Slab { get; set; }
     public SurfacePosition Position { get; set; }
+    public double ThermalConductivity { get; set; }
 }
