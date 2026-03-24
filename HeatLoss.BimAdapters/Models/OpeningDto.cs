@@ -10,4 +10,5 @@ public class OpeningDto
     public double Width { get; set; }
     public double Height { get; set; }
     public double BottomLevel { get; set; }
+    public double ThermalConductivity  { get; set; }
 }

@@ -311,7 +311,8 @@ public class NanoCadAdapter
                                 Name = opening.Name,
                                 Width = opening.Width,
                                 Height = opening.Height,
-                                BottomLevel = opening.BasePoint.Z
+                                BottomLevel = opening.BasePoint.Z,
+                                ThermalConductivity = double.TryParse(opening.GetParameter("BUILD_THERMAL_CONDUCTIVITY"),  out var value) ? value : 0,
                             });
                         }
                     }
