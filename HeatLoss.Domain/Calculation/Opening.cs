@@ -1,12 +1,9 @@
 ﻿using HeatLoss.Domain.Enums;
-using NetTopologySuite.Geometries;
 
-namespace HeatLoss.BimAdapters.Models;
+namespace HeatLoss.Domain.Calculation;
 
-public class OpeningDto
+public class Opening
 {
-    public Guid Id { get; set; }
-    public Polygon Polygon { get; set; } = null!;
     public string Name { get; set; } = null!;
     public double Width { get; set; }
     public double Height { get; set; }

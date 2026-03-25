@@ -1,4 +1,4 @@
-﻿namespace HeatLoss.BimAdapters.Models;
+﻿namespace HeatLoss.Domain.Enums;
 
 public enum OpeningType
 {

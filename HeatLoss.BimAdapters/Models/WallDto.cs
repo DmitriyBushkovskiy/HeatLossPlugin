@@ -1,15 +1,14 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.BimAdapters.Extensions;
+using HeatLoss.Domain.Enums;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.BimAdapters.DTO;
+namespace HeatLoss.BimAdapters.Models;
 
 public class WallDto
 {
     public long Id  { get; set; }
-    public Polygon Polygon  { get; set; }
+    public Polygon Polygon { get; set; } = null!;
     public List<OpeningDto> Openings { get; set; } = new();
-    // public List<Space> BelongToSpaces { get; set; } = new();
     public SurfacePosition Position { get; set; }
     public double Thickness { get; set; }
     public double Width { get; set; }

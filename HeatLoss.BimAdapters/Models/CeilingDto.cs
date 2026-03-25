@@ -1,6 +1,7 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
+using HeatLoss.Domain.Enums;
 
-namespace HeatLoss.BimAdapters.DTO;
+namespace HeatLoss.BimAdapters.Models;
 
 public class CeilingDto
 {

@@ -1,4 +1,4 @@
-﻿namespace HeatLoss.BimAdapters.DTO;
+﻿namespace HeatLoss.BimAdapters.Models;
 
 public class FloorDto
 {

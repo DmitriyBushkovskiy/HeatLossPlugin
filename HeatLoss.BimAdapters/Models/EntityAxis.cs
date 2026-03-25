@@ -1,6 +1,6 @@
 ﻿namespace HeatLoss.BimAdapters.Models;
 
-public enum EntityAxis // TODO: rename
+public enum EntityAxis
 {
     Inside = -1,
     Center = 0,

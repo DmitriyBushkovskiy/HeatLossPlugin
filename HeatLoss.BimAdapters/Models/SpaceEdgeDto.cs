@@ -1,7 +1,7 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.BimAdapters.DTO;
+namespace HeatLoss.BimAdapters.Models;
 
 public class SpaceEdgeDto
 {

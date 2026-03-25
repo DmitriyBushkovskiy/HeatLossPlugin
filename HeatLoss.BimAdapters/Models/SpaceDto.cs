@@ -1,17 +1,14 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.BimAdapters.Extensions;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.BimAdapters.DTO;
+namespace HeatLoss.BimAdapters.Models;
 
 public class SpaceDto
 {
     private readonly SpaceEntity _spaceEntity;
-    public long Id { get; }
+    public long Id { get; set; }
     public string Number { get; init; }
     public string Name { get; init; }
-    // public List<WallDto> Walls { get; init; }
-    // public List<OpeningDto> Openings { get; init; }
     public FloorDto? Floor { get; set; }
     public List<CeilingDto> Ceiling { get; init; } = new();
     public List<SpaceEdgeDto> Edges { get; set; } = new();

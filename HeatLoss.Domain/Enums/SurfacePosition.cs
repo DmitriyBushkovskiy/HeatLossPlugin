@@ -1,4 +1,4 @@
-﻿namespace HeatLoss.BimAdapters.DTO;
+﻿namespace HeatLoss.Domain.Enums;
 
 public enum SurfacePosition
 {
