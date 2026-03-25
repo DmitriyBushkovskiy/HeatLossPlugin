@@ -165,7 +165,7 @@ public class NanoCadAdapter
         foreach (var nanocadSpace in nanocadSpaces)
         {
             // создаем помещение
-            var spaceDto = new SpaceDto(nanocadSpace);
+            var spaceDto = nanocadSpace.ToSpaceDto();
             var spaceCoordinates = nanocadSpace.GetCoordinates().ToList();
             for (int i = 0; i < spaceCoordinates.Count; i++)
             {
