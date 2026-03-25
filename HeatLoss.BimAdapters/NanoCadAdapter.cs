@@ -1,8 +1,11 @@
 ﻿using BIMStructureMgd.Common;
 using BIMStructureMgd.DatabaseObjects;
 using BIMStructureMgd.ObjectProperties;
-using HeatLoss.BimAdapters.DTO;
 using HeatLoss.BimAdapters.Extensions;
+using HeatLoss.BimAdapters.Models;
+using HeatLoss.BimAdapters.Utils;
+using HeatLoss.Domain.Calculation;
+using HeatLoss.Domain.Enums;
 using HeatLoss.Geometry;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;
@@ -35,7 +38,7 @@ public class NanoCadAdapter
     
     private readonly List<SpaceDto> _spaceDtos = new();
     
-    public void InitBuildingInfo()
+    public Building InitBuildingInfo()
     {
         var document = Application.DocumentManager.MdiActiveDocument;
         var editor = document.Editor;
@@ -74,46 +77,56 @@ public class NanoCadAdapter
 
         CreateCeilings();
         
-        
         // далее удалить
  
-        var orderedSpaces = _spaceDtos.OrderBy(x => x.Number).ToList();
-        for (int i = 0; i < orderedSpaces.Count; i++)
-        {
-            var s = orderedSpaces[i];
-            var color = Color.FromColorIndex(ColorMethod.ByAci, (short)i);
-            PrintPolygons(new []{ s.GetPolygon()}, color, s.BottomLevel);
-            editor.WriteMessage($"Помещение {s.Number} {s.Name}");
-            var walls = s.Edges.SelectMany(x => x.Walls).OrderBy(x => x.AdjacentSpace?.Number).ToList();
-            
-            // стены и проемы
-            // foreach (var wall in walls)
-            // {
-            //     editor.WriteMessage($"--- {wall.Position} W:{wall.Width} H:{wall.Height} Z:{wall.BottomLevel}" + (wall.Position == WallPosition.Inside ? $" пом: {wall.AdjacentSpace!.Number}" : string.Empty));
-            //     foreach (var opening in wall.Openings)
-            //     {
-            //         editor.WriteMessage($"------ {opening.Name} W:{opening.Width}, H:{opening.Height} Z:{opening.BottomLevel}");
-            //     }
-            // }
-            PrintPolygons(walls.Select(x => x.Polygon).ToList(), color, s.BottomLevel);
-            // PrintPolygons(walls.SelectMany(x => x.Openings).Select(x => x.Polygon).ToList(), color, s.BottomLevel);
-        }
-        
+        // var orderedSpaces = _spaceDtos.OrderBy(x => x.Number).ToList();
+        // for (int i = 0; i < orderedSpaces.Count; i++)
+        // {
+        //     var s = orderedSpaces[i];
+        //     var color = Color.FromColorIndex(ColorMethod.ByAci, (short)i);
+        //     PrintPolygons(new []{ s.GetPolygon()}, color, s.BottomLevel);
+        //     editor.WriteMessage($"Помещение {s.Number} {s.Name} T: {s.Temperature}");
+        //     var walls = s.Edges.SelectMany(x => x.Walls).OrderBy(x => x.AdjacentSpace?.Number).ToList();
+        //     
+        //     // стены и проемы
+        //     editor.WriteMessage("-Стены и проемы:");
+        //     foreach (var wall in walls)
+        //     {
+        //         // editor.WriteMessage($"--- {wall.Position} W:{wall.Width} H:{wall.Height} Z:{wall.BottomLevel} К:{wall.ThermalConductivity}" + (wall.Position == SurfacePosition.Inside ? $" пом: {wall.AdjacentSpace!.Number}" : string.Empty));
+        //         foreach (var opening in wall.Openings)
+        //         {
+        //             editor.WriteMessage($"------ {opening.Type} {opening.Name} W:{opening.Width}, H:{opening.Height} Z:{opening.BottomLevel} K:{opening.ThermalConductivity}");
+        //         }
+        //     }
+        //     
+        //     // перекрытия
+        //     // editor.WriteMessage("-Перекрытия:");
+        //     // foreach (var ceiling in s.Ceiling)
+        //     // {
+        //     //     editor.WriteMessage($"--- {(ceiling.Position == SurfacePosition.Inside ? ceiling.Space!.Number : "Внешнее перекрытие")} S:{ceiling.Area} K:{ceiling.ThermalConductivity}");
+        //     // }
+        //     // PrintPolygons(walls.Select(x => x.Polygon).ToList(), color, s.BottomLevel);
+        //     // PrintPolygons(walls.SelectMany(x => x.Openings).Select(x => x.Polygon).ToList(), color, s.BottomLevel);
+        // }
+        //
         // зоны помещений первого этажа
-        var fistFloor = nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).First(); //TODO: что если несколько сеток осей?
-        var firstFloorSpaces = _spaceDtos.Where(x => Math.Abs(x.BottomLevel - fistFloor.Position) < 1).OrderBy(x => x.Number).ToList();
-        foreach (var s in firstFloorSpaces)
-        {
-            editor.WriteMessage($"--- {s.Number} 1:{s.Floor.FirstFloorAreaArea} 2:{s.Floor.SecondFloorAreaArea}, 3:{s.Floor.ThirdFloorAreaArea} 4:{s.Floor.FourthFloorAreaArea}");
-        }
+        // var fistFloor = nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).First(); //TODO: что если несколько сеток осей?
+        // var firstFloorSpaces = _spaceDtos.Where(x => Math.Abs(x.BottomLevel - fistFloor.Position) < 1).OrderBy(x => x.Number).ToList();
+        // foreach (var s in firstFloorSpaces)
+        // {
+        //     editor.WriteMessage($"--- {s.Number} 1:{s.Floor.FirstFloorAreaArea} 2:{s.Floor.SecondFloorAreaArea}, 3:{s.Floor.ThirdFloorAreaArea} 4:{s.Floor.FourthFloorAreaArea}");
+        // }
+        //
+        // PrintPolygons(firstFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 1), 0);
+        // PrintPolygons(secondFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 2), 0);
+        // PrintPolygons(thirdFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 3), 0);
+        // PrintPolygons(fourthFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 4), 0);
         
-        PrintPolygons(firstFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 1), 0);
-        PrintPolygons(secondFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 2), 0);
-        PrintPolygons(thirdFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 3), 0);
-        PrintPolygons(fourthFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 4), 0);
-        
+
         
         editor.WriteMessage($"!!!! Finished !!!!!");
+
+        return GetBuilding();
     }
     
     private void Print(IEnumerable<Drawable> geometries, Color color)
@@ -454,6 +467,15 @@ public class NanoCadAdapter
                 _materialsThermalConductivity[materialId] = double.TryParse(thermalConductivity, out var result) ? result : 0.0 ;
             }
         }
+    }
+
+    private Building GetBuilding()
+    {
+        var building = new Building();
+        building.Spaces = _spaceDtos.Select(x => x.ToSpace()).ToList();
+        var spaces = new List<Space>();
+
+        return building;
     }
 
     /// <summary>
