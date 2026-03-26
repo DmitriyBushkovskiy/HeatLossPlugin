@@ -1,6 +1,7 @@
 ﻿using HeatLoss.BimAdapters;
 using HeatLoss.Domain.Calculation;
 using HeatLoss.Domain.Enums;
+using HeatLoss.Utils;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;
 using Teigha.Runtime;
@@ -32,7 +33,14 @@ public class Plugin
     [CommandMethod("HL_CALCULATE")]
     public void Foo_Calculate()
     {
+        if (_building == null)
+        {
+            _editor.WriteMessage("No building found");
+            return;
+        }
 
+        var calculator = new Calculator();
+        var result = calculator.Calculate(_building);
     }
     
     [CommandMethod("HL_Print_building_data")]
@@ -50,12 +58,12 @@ public class Plugin
             _editor.WriteMessage("-Стены:");
             foreach (var wall in space.Walls)
             {
-                _editor.WriteMessage($"--{(wall.Position == SurfacePosition.Inside ? "Внутренняя" : "Наружная")} стена{(wall.Position == SurfacePosition.Inside ? wall.AdjacentSpaceNumber : "")}");
+                _editor.WriteMessage($"--{(wall.Position == SurfacePosition.Inside ? "Внутренняя" : "Наружная")} стена{(wall.Position == SurfacePosition.Inside ? wall.AdjacentSpaceNumber : "")} К:{wall.ThermalConductivity}");
                 if (wall.Openings.Count > 0)
                 {
                     foreach (var opening in wall.Openings)
                     {
-                        _editor.WriteMessage($"---{(opening.Type == OpeningType.Door ? "Дверь" : "Окно")} {opening.Width}x{opening.Height}");
+                        _editor.WriteMessage($"---{(opening.Type == OpeningType.Door ? "Дверь" : "Окно")} {opening.Width}x{opening.Height} K:{opening.ThermalConductivity}");
                     }
                     
                 }
@@ -75,7 +83,7 @@ public class Plugin
                 _editor.WriteMessage("-Перекрытия:");
                 foreach (var ceiling in space.Ceilings.OrderBy(x => x.AdjacentSpaceNumber))
                 {
-                    _editor.WriteMessage($"--{ceiling.Position}{(ceiling.Position == SurfacePosition.Inside ? $" ->{ceiling.AdjacentSpaceNumber}" : "")}: {ceiling.Area}m^2");
+                    _editor.WriteMessage($"--{ceiling.Position}{(ceiling.Position == SurfacePosition.Inside ? $" ->{ceiling.AdjacentSpaceNumber}" : "")}: {ceiling.Area}m^2 K:{ceiling.ThermalConductivity}");
                     
                 }
             }

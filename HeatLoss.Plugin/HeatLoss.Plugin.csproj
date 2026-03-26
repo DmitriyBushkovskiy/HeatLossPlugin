@@ -35,6 +35,7 @@
     <ItemGroup>
       <ProjectReference Include="..\HeatLoss.BimAdapters\HeatLoss.BimAdapters.csproj" />
       <ProjectReference Include="..\HeatLoss.Domain\HeatLoss.Domain.csproj" />
+      <ProjectReference Include="..\HeatLoss.Utils\HeatLoss.Utils.csproj" />
     </ItemGroup>
 
 </Project>

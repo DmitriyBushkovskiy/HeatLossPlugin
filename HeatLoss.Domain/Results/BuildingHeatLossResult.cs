@@ -2,5 +2,5 @@
 
 public class BuildingHeatLossResult
 {
-    public List<SpaceHeatLossResult> Spaces { get; init; }
+    public List<SpaceHeatLossResult> Spaces { get; init; } = new();
 }

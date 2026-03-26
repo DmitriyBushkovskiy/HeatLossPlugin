@@ -1,4 +1,5 @@
-﻿using BIMStructureMgd.DatabaseObjects;
+﻿using System.Globalization;
+using BIMStructureMgd.DatabaseObjects;
 using HeatLoss.BimAdapters.Extensions;
 using HeatLoss.BimAdapters.Models;
 using HeatLoss.Domain.Calculation;
@@ -56,7 +57,7 @@ public static class NanoCadMapper
             Number = spaceEntity.Number,
             BottomLevel = spaceEntity.GetBottomLevel(),
             Height = spaceEntity.Height,
-            Temperature = double.TryParse(spaceEntity.GetParameter("HL_SPACE_TEMPERATURE"), out var temperature)
+            Temperature = double.TryParse(spaceEntity.GetParameter("HL_SPACE_TEMPERATURE"), NumberStyles.Any , CultureInfo.InvariantCulture, out var temperature)
                 ? temperature
                 : 0,
         };

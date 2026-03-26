@@ -1,4 +1,5 @@
-﻿using BIMStructureMgd.Common;
+﻿using System.Globalization;
+using BIMStructureMgd.Common;
 using BIMStructureMgd.DatabaseObjects;
 using BIMStructureMgd.ObjectProperties;
 using HeatLoss.BimAdapters.Extensions;
@@ -35,9 +36,17 @@ public class NanoCadAdapter
     private List<Polygon> thirdFloorGeometry;
     private List<Polygon> fourthFloorGeometry;
     
-    
     private readonly List<SpaceDto> _spaceDtos = new();
     
+    private Document document;
+    private Editor editor;
+
+    public NanoCadAdapter()
+    {
+        document = Application.DocumentManager.MdiActiveDocument;
+        editor = document.Editor;
+    }
+
     public Building InitBuildingInfo()
     {
         var document = Application.DocumentManager.MdiActiveDocument;
@@ -325,7 +334,7 @@ public class NanoCadAdapter
                                 Width = opening.Width,
                                 Height = opening.Height,
                                 BottomLevel = opening.BasePoint.Z,
-                                ThermalConductivity = double.TryParse(opening.GetParameter("BUILD_THERMAL_CONDUCTIVITY"),  out var value) ? value : 0,
+                                ThermalConductivity = double.TryParse(opening.GetParameter("BUILD_THERMAL_CONDUCTIVITY"),  NumberStyles.Any , CultureInfo.InvariantCulture,out var value) ? value : 0,
                                 Type = Enum.Parse<OpeningType>(opening.AECType.ToString()),
                             });
                         }
@@ -464,7 +473,7 @@ public class NanoCadAdapter
             {
                 var material = materialLibrary.GetMaterialById(materialId);
                 var thermalConductivity = material.GetParameter("BUILD_THERMAL_CONDUCTIVITY");
-                _materialsThermalConductivity[materialId] = double.TryParse(thermalConductivity, out var result) ? result : 0.0 ;
+                _materialsThermalConductivity[materialId] = double.TryParse(thermalConductivity, NumberStyles.Any , CultureInfo.InvariantCulture, out var result) ? result : 0.0 ;
             }
         }
     }
