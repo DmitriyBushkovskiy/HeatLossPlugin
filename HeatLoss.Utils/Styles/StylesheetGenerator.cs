@@ -51,8 +51,15 @@ public static class StylesheetGenerator
                 new CellFormat(CustomAlignments.GetCenterCenterAlignment())
                 {
                     FontId = 0,
-                    FillId = 0, //Id - работает только при FillId > 1
+                    FillId = 0,
                     BorderId = 1,
+                },
+                // 3 - Наименование помещения
+                new CellFormat(CustomAlignments.GetCenterCenterAlignment())
+                {
+                    FontId = 1,
+                    FillId = 0,
+                    BorderId = 2,
                 }
             )
         );

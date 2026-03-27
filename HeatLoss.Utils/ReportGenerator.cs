@@ -2,7 +2,10 @@
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using HeatLoss.Domain.Calculation;
+using HeatLoss.Domain.Enums;
 using HeatLoss.Domain.Results;
+using HeatLoss.Domain.Results.Enums;
+using HeatLoss.Utils.Enums;
 using HeatLoss.Utils.Extensions;
 using HeatLoss.Utils.Styles;
 
@@ -10,6 +13,16 @@ namespace HeatLoss.Utils;
 
 public class ReportGenerator
 {
+    private readonly LengthMeasurementUnit _lengthMeasurementUnit;
+    private readonly bool _combineSimilarSurfaces;
+    
+    
+    public ReportGenerator(ReportGeneratorOptions options)
+    {
+        _lengthMeasurementUnit = options.LengthMeasurementUnit;
+        _combineSimilarSurfaces = options.CombineSimilarSurfaces;
+    }
+
     public void GenerateReport(BuildingHeatLossResult buildingHeatLossResult)
     {
         var now = DateTime.Now;
@@ -51,7 +64,7 @@ public class ReportGenerator
             
             AddHeader(worksheetPart);
 
-            foreach (var space in result.Spaces)
+            foreach (var space in result.Spaces.OrderBy(x => x.Number))
             {
                 AddSpace(worksheetPart, space);
             }
@@ -70,16 +83,17 @@ public class ReportGenerator
             needToInsertColumns = true;
         }
             
-        columns.Append(new Column { Min = 1, Max = 15, Width = 20, CustomWidth = true }); //Сторона света
-        columns.Append(new Column { Min = 2, Max = 15, Width = 15, CustomWidth = true }); //Название конструкции
-        columns.Append(new Column { Min = 3, Max = 15, Width = 15, CustomWidth = true }); //Ширина
-        columns.Append(new Column { Min = 4, Max = 15, Width = 15, CustomWidth = true }); //Высота
+        columns.Append(new Column { Min = 1, Max = 15, Width = 15, CustomWidth = true }); //Сторона света
+        columns.Append(new Column { Min = 2, Max = 15, Width = 30, CustomWidth = true }); //Название конструкции
+        columns.Append(new Column { Min = 3, Max = 15, Width = 12, CustomWidth = true }); //Ширина
+        columns.Append(new Column { Min = 4, Max = 15, Width = 12, CustomWidth = true }); //Высота
         columns.Append(new Column { Min = 5, Max = 15, Width = 15, CustomWidth = true }); //Количество
-        columns.Append(new Column { Min = 6, Max = 15, Width = 10, CustomWidth = true }); //R
-        columns.Append(new Column { Min = 7, Max = 15, Width = 10, CustomWidth = true }); //K
-        columns.Append(new Column { Min = 8, Max = 15, Width = 20, CustomWidth = true }); //Разность температур
-        columns.Append(new Column { Min = 9, Max = 15, Width = 15, CustomWidth = true }); //Коэффициент
-        columns.Append(new Column { Min = 10, Max = 15, Width = 20, CustomWidth = true }); //Теплопотери
+        columns.Append(new Column { Min = 6, Max = 15, Width = 12, CustomWidth = true }); //Площадь
+        columns.Append(new Column { Min = 7, Max = 15, Width = 12, CustomWidth = true }); //R
+        columns.Append(new Column { Min = 8, Max = 15, Width = 12, CustomWidth = true }); //K
+        columns.Append(new Column { Min = 9, Max = 15, Width = 12, CustomWidth = true }); //Разность температур
+        columns.Append(new Column { Min = 10, Max = 15, Width = 15, CustomWidth = true }); //Коэффициент
+        columns.Append(new Column { Min = 11, Max = 15, Width = 15, CustomWidth = true }); //Теплопотери
             
         if (needToInsertColumns)
             worksheetPart.Worksheet.InsertAt(columns, 0);
@@ -117,16 +131,52 @@ public class ReportGenerator
         sheetData.SetValueToCell("A1", "Сторона света");
         sheetData.SetValueToCell("B1", "Ограждающая конструкция");
         sheetData.SetValueToCell("B2", "Тип");
-        sheetData.SetValueToCell("C2", "Размеры");
+        sheetData.SetValueToCell("C2", $"Размеры, {_lengthMeasurementUnit.ToShortString()}");
         sheetData.SetValueToCell("C3", "Ширина");
         sheetData.SetValueToCell("D3", "Высота");
         sheetData.SetValueToCell("E2", "Количество");
-        sheetData.SetValueToCell("F2", "Площадь");
-        sheetData.SetValueToCell("G2", "R");
-        sheetData.SetValueToCell("H2", "K");
-        sheetData.SetValueToCell("I1", "Разность температур");
+        sheetData.SetValueToCell("F2", "Площадь, м²");
+        sheetData.SetValueToCell("G2", "R, м²∙°С/Вт");
+        sheetData.SetValueToCell("H2", "K, Вт/(м²∙°С)");
+        sheetData.SetValueToCell("I1", "Разность температур, °С");
         sheetData.SetValueToCell("J1", "Поправочный коэффициент");
-        sheetData.SetValueToCell("K1", "Теплопотери");
+        sheetData.SetValueToCell("K1", "Теплопотери, Вт");
+        
+        // закрепляем шапку таблицы
+        var worksheet = worksheetPart.Worksheet;
+
+        var sheetViews = worksheet.GetFirstChild<SheetViews>();
+        if (sheetViews == null)
+        {
+            sheetViews = new SheetViews();
+            worksheet.InsertAt(sheetViews, 0);
+        }
+
+        var sheetView = sheetViews.Elements<SheetView>().FirstOrDefault();
+        if (sheetView == null)
+        {
+            sheetView = new SheetView { WorkbookViewId = 0U };
+            sheetViews.Append(sheetView);
+        }
+
+        var pane = new Pane
+        {
+            VerticalSplit = 3,
+            TopLeftCell = "A4",
+            ActivePane = PaneValues.BottomLeft,
+            State = PaneStateValues.Frozen
+        };
+
+        sheetView.Append(pane);
+
+        sheetView.Append(new Selection
+        {
+            Pane = PaneValues.BottomLeft,
+            ActiveCell = "A4",
+            SequenceOfReferences = new ListValue<StringValue> { InnerText = "A4" }
+        });
+
+        worksheet.Save();
     }
     
     private static void InsertCell(Row row, string columnLetter, string val = "", CellValues type = CellValues.String, uint styleIndex = 0)
@@ -144,52 +194,94 @@ public class ReportGenerator
     {
         var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>()!;
         // наименование помещения
-        AddSpaceNameRow(worksheetPart, $"{space.Number} {space.Name} (T: {space.Temperature} °C)", ref _currentRowIndex);
+        AddSpaceNameRow(worksheetPart, $"{space.Number} {space.Name} (T: {space.Temperature} °C)", space.TotalHeatLoss, ref _currentRowIndex);
         
         // ограждающие конструкции
-        foreach (var surface in space.Surfaces)
+        var surfaces = _combineSimilarSurfaces ? GetCombineSimilarSurfaces(space.Surfaces) : space.Surfaces.Select(x => (x, 1)).ToList();
+        foreach (var surface in surfaces)
         {
-            AddSurfaceRow(sheetData, surface, ref _currentRowIndex);
+            AddSurfaceRow(sheetData, surface.Item1, surface.Item2, ref _currentRowIndex);
         }
     }
 
-    private void AddSurfaceRow(SheetData sheetData, SurfaceHeatLossResult surfaceHeatLossResult, ref uint rowIndex)
+    private void AddSurfaceRow(SheetData sheetData, SurfaceHeatLossResult surfaceHeatLossResult, int amount, ref uint rowIndex)
     {
+        if (surfaceHeatLossResult.TemperatureDifference == 0)
+            return;
         var row = new Row { RowIndex = rowIndex };
         sheetData.Append(row);
         
         for (var i = 'A'; i <= 'K'; i++)
             InsertCell(row, i.ToString(), styleIndex: 2);
         
-        sheetData.SetValueToCell($"A{rowIndex}", "");
-        sheetData.SetValueToCell($"B{rowIndex}", surfaceHeatLossResult.Type.ToString());
-        sheetData.SetValueToCell($"C{rowIndex}", "");
-        sheetData.SetValueToCell($"D{rowIndex}", "");
-        sheetData.SetValueToCell($"E{rowIndex}", "");
-        sheetData.SetValueToCell($"F{rowIndex}", surfaceHeatLossResult.Area.ToString());
-        sheetData.SetValueToCell($"G{rowIndex}", surfaceHeatLossResult.ThermalConductivity.ToString());
-        sheetData.SetValueToCell($"H{rowIndex}", surfaceHeatLossResult.HeatTransferCoefficient.ToString());
-        sheetData.SetValueToCell($"I{rowIndex}", surfaceHeatLossResult.TemperatureDifference.ToString());
-        sheetData.SetValueToCell($"J{rowIndex}", "");
-        sheetData.SetValueToCell($"K{rowIndex}", surfaceHeatLossResult.HeatLoss.ToString());
+        sheetData.SetValueToCell($"A{rowIndex}", ""); //Сторона света
+        sheetData.SetValueToCell($"B{rowIndex}", GetSurfaceType(surfaceHeatLossResult)); //Тип
+        sheetData.SetValueToCell($"C{rowIndex}", ConvertLength(surfaceHeatLossResult.Width)); //Ширина
+        sheetData.SetValueToCell($"D{rowIndex}", ConvertLength(surfaceHeatLossResult.Height)); //Высота
+        sheetData.SetValueToCell($"E{rowIndex}", amount.ToString()); //Количество
+        sheetData.SetValueToCell($"F{rowIndex}", surfaceHeatLossResult.Area.ToString()); //Площадь
+        sheetData.SetValueToCell($"G{rowIndex}", surfaceHeatLossResult.ThermalConductivity.ToString()); // R
+        sheetData.SetValueToCell($"H{rowIndex}", surfaceHeatLossResult.HeatTransferCoefficient.ToString()); //K
+        sheetData.SetValueToCell($"I{rowIndex}", surfaceHeatLossResult.TemperatureDifference.ToString()); //Разность температур
+        sheetData.SetValueToCell($"J{rowIndex}", ""); // Поправочный коэффициент
+        sheetData.SetValueToCell($"K{rowIndex}", (surfaceHeatLossResult.HeatLoss * amount).ToString()); //Теплопотери
         
         rowIndex++;
     }
     
-    private void AddSpaceNameRow(WorksheetPart worksheetPart, string value, ref uint rowIndex)
+    private void AddSpaceNameRow(WorksheetPart worksheetPart, string spaceName, double totalHeatLoss, ref uint rowIndex)
     {
         var sheetData = worksheetPart.Worksheet.GetFirstChild<SheetData>()!;
         var row = new Row { RowIndex = rowIndex };
         sheetData.Append(row);
         
-        for (var i = 'A'; i <= 'K'; i++)
-            InsertCell(row, i.ToString(), styleIndex: 2);
+        for (var i = 'A'; i <= 'J'; i++)
+            InsertCell(row, i.ToString(), styleIndex: 3);
+        InsertCell(row, "K", styleIndex: 1);
         
         var mergeCells = worksheetPart.Worksheet.Elements<MergeCells>().First();
-        mergeCells.Append(new MergeCell { Reference = new StringValue($"A{rowIndex}:K{rowIndex}") });
+        mergeCells.Append(new MergeCell { Reference = new StringValue($"A{rowIndex}:J{rowIndex}") });
         
-        sheetData.SetValueToCell($"A{rowIndex}", value);
+        sheetData.SetValueToCell($"A{rowIndex}", spaceName);
+        sheetData.SetValueToCell($"K{rowIndex}", totalHeatLoss.ToString());
         
         rowIndex++;
+    }
+
+    private string ConvertLength(double? length)
+    {
+        return length == null ? string.Empty : Math.Round((double)length / _lengthMeasurementUnit.GetCoefficient(), _lengthMeasurementUnit.GetRound()).ToString() ;
+    }
+
+    private string GetSurfaceType(SurfaceHeatLossResult surfaceHeatLossResult)
+    {
+        switch (surfaceHeatLossResult.Type)
+        {
+            case SurfaceType.Door:
+                return surfaceHeatLossResult.Position == SurfacePosition.Inside ? "Дверь" : "Наружная дверь";
+            case SurfaceType.Wall:
+                return surfaceHeatLossResult.Position == SurfacePosition.Inside ? "Внутренняя стена" : "Наружная стена";
+            case SurfaceType.Ceiling:
+                return surfaceHeatLossResult.Position == SurfacePosition.Inside ? "Внутреннее перекрытие" : "Наружное перекрытие";
+            case SurfaceType.Floor:
+                return "Полы";
+            case SurfaceType.Window:
+                return "Окно";
+            default:
+                throw new NotImplementedException();
+        }
+    }
+
+    private List<(SurfaceHeatLossResult, int)> GetCombineSimilarSurfaces(List<SurfaceHeatLossResult> surfaceHeatLossResults)
+    {
+        var result = new Dictionary<SurfaceHeatLossResult, int>();
+        foreach (var surface in surfaceHeatLossResults)
+        {
+            if (result.ContainsKey(surface))
+                result[surface]++;
+            else
+                result.Add(surface, 1);
+        }
+        return result.Select(pair => (pair.Key, pair.Value)).ToList();
     }
 }

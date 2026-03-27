@@ -53,18 +53,21 @@ public class Calculator
     public List<SurfaceHeatLossResult> CalculateWall(Wall wall, double temperatureDifference)
     {
         var result = wall.Openings.Select(x => CalculateOpening(x, temperatureDifference)).ToList();
-        var wallArea = wall.Width * wall.Height - wall.Openings.Sum(x => x.Height * x.Width);
+        var wallArea = Math.Round((wall.Width * wall.Height - wall.Openings.Sum(x => x.Height * x.Width))/1_000_000, 2);
         var heatTransferCoefficient = GetHeatTransferCoefficient(wall.ThermalConductivity);
         result.Add(
             new SurfaceHeatLossResult
             {
                 Name = wall.Position ==  SurfacePosition.Outside ? "Наружная стена" : "Внутренняя стена",
+                Width = wall.Width,
+                Height = wall.Height,
                 Area = wallArea,
                 Type = SurfaceType.Wall,
+                Position = wall.Position,
                 TemperatureDifference = temperatureDifference,
                 ThermalConductivity = wall.ThermalConductivity,
                 HeatTransferCoefficient = heatTransferCoefficient,
-                HeatLoss = wallArea * heatTransferCoefficient * temperatureDifference,
+                HeatLoss = Math.Round(wallArea * heatTransferCoefficient * temperatureDifference),
             });
         return result;
     }
@@ -76,12 +79,14 @@ public class Calculator
         return new SurfaceHeatLossResult
         {
             Name = opening.Name,
+            Width = opening.Width,
+            Height = opening.Height,
             Area = area,
             Type = GetSurfaceTypeForOpening(opening.Type),
             TemperatureDifference = temperatureDifference,
             ThermalConductivity = opening.ThermalConductivity,
             HeatTransferCoefficient = heatTransferCoefficient,
-            HeatLoss = area * heatTransferCoefficient * temperatureDifference,
+            HeatLoss = Math.Round(area * heatTransferCoefficient * temperatureDifference),
         };
     }
 
