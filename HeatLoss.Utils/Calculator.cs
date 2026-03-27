@@ -17,6 +17,7 @@ public class Calculator
             {
                 Number = space.Number,
                 Name = space.Name,
+                Temperature = space.Temperature
             };
             foreach (var wall in space.Walls)
             {
