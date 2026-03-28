@@ -14,6 +14,7 @@ public static class NanoCadMapper
         return new Opening
         {
             Name = openingDto.Name,
+            Mark = openingDto.Mark,
             Width = openingDto.Width,
             Height = openingDto.Height,
             Type = openingDto.Type,
@@ -26,6 +27,7 @@ public static class NanoCadMapper
     {
         return new Wall
         {
+            Mark = wallDto.Mark,
             Position = wallDto.Position,
             Width = wallDto.Width,
             Height = wallDto.Height,
@@ -62,13 +64,13 @@ public static class NanoCadMapper
                 : 0,
         };
     }
-
     
     public static Ceiling ToCeiling(this CeilingDto ceilingDto)
     {
         return new Ceiling
         {
-            Area =  ceilingDto.Area,
+            Mark = ceilingDto.Slab?.GetParameter("BUILD_MATERIAL_ID") ?? string.Empty,
+            Area = ceilingDto.Area,
             Position = ceilingDto.Position,
             ThermalConductivity =  ceilingDto.ThermalConductivity,
             AdjacentSpaceNumber = ceilingDto.Space?.Number,

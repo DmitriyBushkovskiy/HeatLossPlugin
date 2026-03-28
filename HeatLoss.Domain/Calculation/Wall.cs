@@ -4,6 +4,7 @@ namespace HeatLoss.Domain.Calculation;
 
 public class Wall
 {
+    public string Mark { get; set; } = null!;
     public List<Opening> Openings { get; set; } = new();
     public SurfacePosition Position { get; set; }
     public double Width { get; set; }

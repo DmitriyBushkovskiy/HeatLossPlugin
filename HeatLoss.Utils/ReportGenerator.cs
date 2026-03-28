@@ -218,13 +218,13 @@ public class ReportGenerator
         sheetData.SetValueToCell($"B{rowIndex}", GetSurfaceType(surfaceHeatLossResult)); //Тип
         sheetData.SetValueToCell($"C{rowIndex}", ConvertLength(surfaceHeatLossResult.Width)); //Ширина
         sheetData.SetValueToCell($"D{rowIndex}", ConvertLength(surfaceHeatLossResult.Height)); //Высота
-        sheetData.SetValueToCell($"E{rowIndex}", amount.ToString()); //Количество
-        sheetData.SetValueToCell($"F{rowIndex}", surfaceHeatLossResult.Area.ToString()); //Площадь
-        sheetData.SetValueToCell($"G{rowIndex}", surfaceHeatLossResult.ThermalConductivity.ToString()); // R
-        sheetData.SetValueToCell($"H{rowIndex}", surfaceHeatLossResult.HeatTransferCoefficient.ToString()); //K
-        sheetData.SetValueToCell($"I{rowIndex}", surfaceHeatLossResult.TemperatureDifference.ToString()); //Разность температур
+        sheetData.SetValueToCell($"E{rowIndex}", amount); //Количество
+        sheetData.SetValueToCell($"F{rowIndex}", surfaceHeatLossResult.Area); //Площадь
+        sheetData.SetValueToCell($"G{rowIndex}", surfaceHeatLossResult.ThermalConductivity); // R
+        sheetData.SetValueToCell($"H{rowIndex}", surfaceHeatLossResult.HeatTransferCoefficient); //K
+        sheetData.SetValueToCell($"I{rowIndex}", surfaceHeatLossResult.TemperatureDifference); //Разность температур
         sheetData.SetValueToCell($"J{rowIndex}", ""); // Поправочный коэффициент
-        sheetData.SetValueToCell($"K{rowIndex}", (surfaceHeatLossResult.HeatLoss * amount).ToString()); //Теплопотери
+        sheetData.SetValueToCell($"K{rowIndex}", surfaceHeatLossResult.HeatLoss * amount); //Теплопотери
         
         rowIndex++;
     }
@@ -243,14 +243,14 @@ public class ReportGenerator
         mergeCells.Append(new MergeCell { Reference = new StringValue($"A{rowIndex}:J{rowIndex}") });
         
         sheetData.SetValueToCell($"A{rowIndex}", spaceName);
-        sheetData.SetValueToCell($"K{rowIndex}", totalHeatLoss.ToString());
+        sheetData.SetValueToCell($"K{rowIndex}", totalHeatLoss);
         
         rowIndex++;
     }
 
-    private string ConvertLength(double? length)
+    private double? ConvertLength(double? length)
     {
-        return length == null ? string.Empty : Math.Round((double)length / _lengthMeasurementUnit.GetCoefficient(), _lengthMeasurementUnit.GetRound()).ToString() ;
+        return length == null ? null : Math.Round((double)length / _lengthMeasurementUnit.GetCoefficient(), _lengthMeasurementUnit.GetRound()) ;
     }
 
     private string GetSurfaceType(SurfaceHeatLossResult surfaceHeatLossResult)
@@ -258,15 +258,15 @@ public class ReportGenerator
         switch (surfaceHeatLossResult.Type)
         {
             case SurfaceType.Door:
-                return surfaceHeatLossResult.Position == SurfacePosition.Inside ? "Дверь" : "Наружная дверь";
+                return surfaceHeatLossResult.Position == SurfacePosition.Inside ? $"Дверь {surfaceHeatLossResult.Mark}" : $"Наружная дверь {surfaceHeatLossResult.Mark}";
             case SurfaceType.Wall:
-                return surfaceHeatLossResult.Position == SurfacePosition.Inside ? "Внутренняя стена" : "Наружная стена";
+                return surfaceHeatLossResult.Position == SurfacePosition.Inside ? $"Внутренняя стена {surfaceHeatLossResult.Mark}\n(с пом. {surfaceHeatLossResult.AdjacentSpaceNumber})" : $"Наружная стена {surfaceHeatLossResult.Mark}";
             case SurfaceType.Ceiling:
-                return surfaceHeatLossResult.Position == SurfacePosition.Inside ? "Внутреннее перекрытие" : "Наружное перекрытие";
+                return surfaceHeatLossResult.Position == SurfacePosition.Inside ? $"Внутреннее перекрытие {surfaceHeatLossResult.Mark}\n(с пом. {surfaceHeatLossResult.AdjacentSpaceNumber})" : $"Наружное перекрытие {surfaceHeatLossResult.Mark}";
             case SurfaceType.Floor:
-                return "Полы";
+                return $"Пол - {surfaceHeatLossResult.Comment} зона";
             case SurfaceType.Window:
-                return "Окно";
+                return $"Окно {surfaceHeatLossResult.Mark}";
             default:
                 throw new NotImplementedException();
         }

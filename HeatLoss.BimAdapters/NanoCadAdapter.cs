@@ -248,6 +248,7 @@ public class NanoCadAdapter
                     var wall = new WallDto
                     {
                         Id = modelWall.Id.ToLong(),
+                        Mark = modelWall.GetParameter("BUILD_MATERIAL_ID"),
                         Position = modelWall.GetPosition(),
                         Thickness = modelWall.Thickness,
                         Polygon = CreateWallPolygon(edge.LineString, modelWall.Thickness, 0),
@@ -277,6 +278,7 @@ public class NanoCadAdapter
                                 {
                                     var wall = new WallDto
                                     {
+                                        Mark = modelWall.GetParameter("BUILD_MATERIAL_ID"),
                                         Position = modelWall.GetPosition(),
                                         Thickness = modelWall.Thickness,
                                         Polygon = CreateWallPolygon(ls, modelWall.Thickness / 2, modelWall.Thickness / 2),
@@ -336,6 +338,7 @@ public class NanoCadAdapter
                                 BottomLevel = opening.BasePoint.Z,
                                 ThermalConductivity = double.TryParse(opening.GetParameter("BUILD_THERMAL_CONDUCTIVITY"),  NumberStyles.Any , CultureInfo.InvariantCulture,out var value) ? value : 0,
                                 Type = Enum.Parse<OpeningType>(opening.AECType.ToString()),
+                                Mark = opening.GetParameter("BOM_MARK")
                             });
                         }
                     }

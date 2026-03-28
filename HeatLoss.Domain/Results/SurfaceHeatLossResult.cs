@@ -6,11 +6,13 @@ namespace HeatLoss.Domain.Results;
 public class SurfaceHeatLossResult: IEquatable<SurfaceHeatLossResult>
 {
     public string Name { get; set; }
+    public string Mark { get; set; }
     public SurfaceType Type { get; init; }
     public SurfacePosition? Position { get; init; }
     public double? Width { get; set; }
     public double? Height { get; set; }
     public double Area { get; init; }
+    public string? AdjacentSpaceNumber  { get; init; }
     public string Comment { get; set; } = string.Empty;
     public double TemperatureDifference { get; init; }
     public double HeatLoss { get; init; }
@@ -26,6 +28,7 @@ public class SurfaceHeatLossResult: IEquatable<SurfaceHeatLossResult>
         
         return Type == other.Type && 
                Position == other.Position &&
+               AdjacentSpaceNumber == other.AdjacentSpaceNumber &&
                Math.Abs(Area - other.Area) < 0.01 && 
                Math.Abs(TemperatureDifference - other.TemperatureDifference) < 0.01 && 
                Math.Abs(HeatLoss - other.HeatLoss) < 0.01;
@@ -35,7 +38,7 @@ public class SurfaceHeatLossResult: IEquatable<SurfaceHeatLossResult>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Type, Position, Area, TemperatureDifference, HeatLoss);
+        return HashCode.Combine(Type, Position, Area, TemperatureDifference, HeatLoss, AdjacentSpaceNumber);
     }
     
     public static bool operator ==(SurfaceHeatLossResult? left, SurfaceHeatLossResult? right)

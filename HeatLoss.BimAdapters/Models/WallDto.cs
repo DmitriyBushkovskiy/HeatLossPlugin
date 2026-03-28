@@ -7,6 +7,7 @@ namespace HeatLoss.BimAdapters.Models;
 public class WallDto
 {
     public long Id  { get; set; }
+    public string Mark { get; set; } = null!;
     public Polygon Polygon { get; set; } = null!;
     public List<OpeningDto> Openings { get; set; } = new();
     public SurfacePosition Position { get; set; }

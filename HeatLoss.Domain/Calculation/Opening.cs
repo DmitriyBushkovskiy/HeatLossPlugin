@@ -5,6 +5,7 @@ namespace HeatLoss.Domain.Calculation;
 public class Opening
 {
     public string Name { get; set; } = null!;
+    public string Mark { get; set; } = null!;
     public double Width { get; set; }
     public double Height { get; set; }
     public double BottomLevel { get; set; }
