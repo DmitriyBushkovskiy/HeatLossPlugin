@@ -20,6 +20,7 @@ public static class NanoCadMapper
             Type = openingDto.Type,
             BottomLevel =  openingDto.BottomLevel,
             ThermalConductivity =  openingDto.ThermalConductivity,
+            CardinalDirection = openingDto.CardinalDirection
         };
     }
     
@@ -34,6 +35,7 @@ public static class NanoCadMapper
             AdjacentSpaceNumber = wallDto.AdjacentSpace?.Number,
             ThermalConductivity = wallDto.ThermalConductivity,
             Openings = wallDto.Openings.Select(ToOpening).ToList(),
+            CardinalDirection = wallDto.CardinalDirection
         };
     }
     

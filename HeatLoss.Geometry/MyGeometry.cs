@@ -1,5 +1,6 @@
 ﻿using HeatLoss.Geometry.Extensions;
 using NetTopologySuite.Geometries;
+using NetTopologySuite.Mathematics;
 using NetTopologySuite.Operation.Buffer;
 using NetTopologySuite.Operation.Union;
 
@@ -120,7 +121,6 @@ public static class MyGeometry
 
     public static LineString MoveLine(LineString lineString, double offset)
     {
-        // находим направление отрезка
         var dx = lineString.EndPoint.X - lineString.StartPoint.X;
         var dy = lineString.EndPoint.Y - lineString.StartPoint.Y;
         var len = Math.Sqrt(dx * dx + dy * dy);
@@ -128,7 +128,6 @@ public static class MyGeometry
         dx /= len;
         dy /= len;
 
-        // находим нормаль
         var nx = -dy;
         var ny = dx;
 
@@ -137,5 +136,34 @@ public static class MyGeometry
             new Coordinate(lineString.StartPoint.X + nx * offset, lineString.StartPoint.Y + ny * offset).Round(),
             new Coordinate(lineString.EndPoint.X + nx * offset, lineString.EndPoint.Y + ny * offset).Round()
         });
+    }
+    
+    public static Vector2D GetInnerPerpendicular(Polygon polygon, LineString edge)
+    {
+        var a = edge.GetCoordinateN(0);
+        var b = edge.GetCoordinateN(1);
+
+        var dx = b.X - a.X;
+        var dy = b.Y - a.Y;
+
+        var n1 = new Vector2D(-dy, dx);
+        var n2 = new Vector2D(dy, -dx);
+        
+        n1.Normalize();
+        n2.Normalize();
+        
+        var length = 10;
+
+        var point = new Point(new Coordinate(
+            a.X + n1.X * length,
+            a.Y + n1.Y * length));
+
+        var normal = polygon.Contains(point) ? n1 : n2;
+
+        var end = new Coordinate(
+            a.X + normal.X * length,
+            a.Y + normal.Y * length);
+
+        return new Vector2D(a, end);
     }
 }

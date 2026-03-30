@@ -29,6 +29,10 @@
             <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\bin\nrxgatemgd.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="ncBIMParametricKit">
+            <HintPath>D:\NanoCadSDK\NCadBIMSDK\include-x64\ncBIMParametricKit.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
     </ItemGroup>
     
     <ItemGroup>

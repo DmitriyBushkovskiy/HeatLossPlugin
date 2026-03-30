@@ -214,7 +214,7 @@ public class ReportGenerator
         for (var i = 'A'; i <= 'K'; i++)
             InsertCell(row, i.ToString(), styleIndex: 2);
         
-        sheetData.SetValueToCell($"A{rowIndex}", ""); //Сторона света
+        sheetData.SetValueToCell($"A{rowIndex}", surfaceHeatLossResult.CardinalDirection?.ToShortString() ?? string.Empty); //Сторона света
         sheetData.SetValueToCell($"B{rowIndex}", GetSurfaceType(surfaceHeatLossResult)); //Тип
         sheetData.SetValueToCell($"C{rowIndex}", ConvertLength(surfaceHeatLossResult.Width)); //Ширина
         sheetData.SetValueToCell($"D{rowIndex}", ConvertLength(surfaceHeatLossResult.Height)); //Высота

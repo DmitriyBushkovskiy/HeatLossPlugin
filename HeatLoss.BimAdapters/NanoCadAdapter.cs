@@ -4,6 +4,7 @@ using BIMStructureMgd.DatabaseObjects;
 using BIMStructureMgd.ObjectProperties;
 using HeatLoss.BimAdapters.Extensions;
 using HeatLoss.BimAdapters.Models;
+using HeatLoss.BimAdapters.Objects;
 using HeatLoss.BimAdapters.Utils;
 using HeatLoss.Domain.Calculation;
 using HeatLoss.Domain.Enums;
@@ -11,13 +12,17 @@ using HeatLoss.Geometry;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;
 using NetTopologySuite.Geometries;
+using NetTopologySuite.Mathematics;
 using NetTopologySuite.Operation.Union;
+using ParametricKit.Tree;
+using ParametricKit.Tree.Eval;
 using Teigha.Colors;
 using Teigha.DatabaseServices;
 using Teigha.Geometry;
 using Teigha.GraphicsInterface;
 using Teigha.Runtime;
 using Exception = System.Exception;
+using Utilities = BIMStructureMgd.Common.Utilities;
 
 namespace HeatLoss.BimAdapters;
 
@@ -30,17 +35,19 @@ public class NanoCadAdapter
     private List<BuildingSlab> nanocadSlabs;
 
     private Dictionary<string, double> _materialsThermalConductivity = new ();
+    private Dictionary<CardinalDirection, Vector2D> _cardinalDirections;
     
     private List<Polygon> firstFloorGeometry;
     private List<Polygon> secondFloorGeometry;
     private List<Polygon> thirdFloorGeometry;
     private List<Polygon> fourthFloorGeometry;
     
-    private readonly List<SpaceDto> _spaceDtos = new();
-    
     private Document document;
     private Editor editor;
 
+    private ProjectDataDto _projectData;
+    private readonly List<SpaceDto> _spaceDtos = new();
+    
     public NanoCadAdapter()
     {
         document = Application.DocumentManager.MdiActiveDocument;
@@ -49,16 +56,13 @@ public class NanoCadAdapter
 
     public Building InitBuildingInfo()
     {
-        var document = Application.DocumentManager.MdiActiveDocument;
-        var editor = document.Editor;
-        
         nanocadSpaces = FindObjects<SpaceEntity>().ToList();
         nanocadWalls = FindObjects<LinearBuildingWall>().ToList();
         nanocadOpenings = FindObjects<BuildingOpening>().ToList();
         nanocadGrids = FindObjects<CoordinateGridRef>().ToList();
         nanocadSlabs = FindObjects<BuildingSlab>().ToList();
         
-        GetMaterialsInfo();
+        InitProjectData();
         
         CreateSpaces();
         
@@ -255,7 +259,8 @@ public class NanoCadAdapter
                         Width = edge.LineString.Length + GetWallThickness(prevEdge.ModelWall!) +  GetWallThickness(nextEdge.ModelWall!),
                         Height = space.Height,
                         BottomLevel = space.BottomLevel,
-                        ThermalConductivity = _materialsThermalConductivity[modelWall.GetParameter(Parameter.Names.BuildMaterialId)]
+                        ThermalConductivity = _materialsThermalConductivity[modelWall.GetParameter(Parameter.Names.BuildMaterialId)],
+                        CardinalDirection = GetCardinalDirection(edge.LineString, modelWall.GetPolygon())
                     };
                     edge.Walls.Add(wall);
                 }
@@ -338,7 +343,8 @@ public class NanoCadAdapter
                                 BottomLevel = opening.BasePoint.Z,
                                 ThermalConductivity = double.TryParse(opening.GetParameter("BUILD_THERMAL_CONDUCTIVITY"),  NumberStyles.Any , CultureInfo.InvariantCulture,out var value) ? value : 0,
                                 Type = Enum.Parse<OpeningType>(opening.AECType.ToString()),
-                                Mark = opening.GetParameter("BOM_MARK")
+                                Mark = opening.GetParameter("BOM_MARK"),
+                                CardinalDirection = wall.Position == SurfacePosition.Outside ? GetCardinalDirection(edge.LineString, opening.GetPolygon()) : null
                             });
                         }
                     }
@@ -461,32 +467,13 @@ public class NanoCadAdapter
         }
     }
 
-    private void GetMaterialsInfo()
-    {
-        var materialLibrary = ProjectMaterialLibrary.Current;
-
-        var surfaces = new List<StructuralSurface>();
-        surfaces.AddRange(nanocadSlabs);
-        surfaces.AddRange(nanocadWalls);
-        
-        foreach (var surface in surfaces)
-        {
-            var materialId = surface.GetElementData().GetParameter(Parameter.Names.BuildMaterialId)?.Value;
-            if (materialId != null && !_materialsThermalConductivity.ContainsKey(materialId))
-            {
-                var material = materialLibrary.GetMaterialById(materialId);
-                var thermalConductivity = material.GetParameter("BUILD_THERMAL_CONDUCTIVITY");
-                _materialsThermalConductivity[materialId] = double.TryParse(thermalConductivity, NumberStyles.Any , CultureInfo.InvariantCulture, out var result) ? result : 0.0 ;
-            }
-        }
-    }
-
     private Building GetBuilding()
     {
-        var building = new Building();
+        var building = new Building
+        {
+            OutsideTemperature = _projectData.OutsideTemperature
+        };
         building.Spaces = _spaceDtos.Select(x => x.ToSpace()).ToList();
-        var spaces = new List<Space>();
-
         return building;
     }
 
@@ -495,6 +482,27 @@ public class NanoCadAdapter
     /// </summary>
     private Polygon CreateWallPolygon(LineString baseLine, double internalOffset, double externalOffset)
         => MyGeometry.CreatePolygonByLine(baseLine, internalOffset, externalOffset);
+    
+    /// <summary>
+    /// Получение стороны света ограждающей конструкции
+    /// </summary>
+    private CardinalDirection GetCardinalDirection(LineString spaceEdge, Polygon surfacePolygon)
+    {
+        var vect = MyGeometry.GetInnerPerpendicular(surfacePolygon, spaceEdge);
+        
+        var minAngle = Math.PI;
+        var cardinalDirection = CardinalDirection.N;
+        foreach (var pair in _cardinalDirections)
+        {
+            var r = Math.Abs(vect.AngleTo(pair.Value));
+            if (r < minAngle)
+            {
+                minAngle = r;
+                cardinalDirection = pair.Key;
+            }
+        }
+        return cardinalDirection;
+    }
     
     /// <summary>
     /// Сдвиг внутренних граней помещения до середины внутренней стены
@@ -553,5 +561,98 @@ public class NanoCadAdapter
                 yield return res;
         }
         tr.Commit();
+    }
+
+    private void InitProjectData()
+    {
+        // Ищем или создаем ProjectData на чертеже
+        ParametricEntity? projectData;
+        projectData = GetProjectData();
+        if (projectData == null)
+        {
+            CreateProjectData();
+            projectData = GetProjectData();
+        }
+        
+        _projectData = new ProjectDataDto
+        {
+            OutsideTemperature = double.Parse(projectData!.GetParameter("HL_OUTSIDE_TEMPERATURE")),
+        };
+
+        // определяем положение сторон света
+        _cardinalDirections = new Dictionary<CardinalDirection, Vector2D>();
+        _cardinalDirections[CardinalDirection.N] = new Vector2D(new Coordinate(projectData!.YDir.X, projectData!.YDir.Y));
+        for (int i = 1; i < 8; i++)
+        {
+            _cardinalDirections[(CardinalDirection)i] = _cardinalDirections[(CardinalDirection)(i - 1)].Rotate(- Math.PI / 4);
+        }
+        
+        // Ищем используемые в проекте материалы
+        var materialLibrary = ProjectMaterialLibrary.Current;
+
+        var surfaces = new List<StructuralSurface>();
+        surfaces.AddRange(nanocadSlabs);
+        surfaces.AddRange(nanocadWalls);
+        
+        foreach (var surface in surfaces)
+        {
+            var materialId = surface.GetElementData().GetParameter(Parameter.Names.BuildMaterialId)?.Value;
+            if (materialId != null && !_materialsThermalConductivity.ContainsKey(materialId))
+            {
+                var material = materialLibrary.GetMaterialById(materialId);
+                var thermalConductivity = material.GetParameter("BUILD_THERMAL_CONDUCTIVITY");
+                _materialsThermalConductivity[materialId] = double.TryParse(thermalConductivity, NumberStyles.Any , CultureInfo.InvariantCulture, out var result) ? result : 0.0 ;
+            }
+        }
+    }
+
+    private static void CreateProjectData()
+    {
+        var document = Application.DocumentManager.MdiActiveDocument;
+        var db = document.Database;
+    
+        var tr = db.TransactionManager.StartTransaction();
+
+        var projectData = new ProjectDataObject(new ProjectDataSpecification());
+        var collector = new Collector();
+        var tree = collector.Collect(projectData);
+        
+        var parametricEntityConverter = new TreeToParametricEntityConverter();
+        var box = parametricEntityConverter.Convert(tree);
+        
+        box.UpdateElements();
+        box.ReCalculateParametric(ViewMode.Plan2D);
+        
+        Utilities.AddEntityToDatabase(db, tr, box);
+        
+        tr.Commit();
+    }
+    
+    private static ParametricEntity? GetProjectData()
+    {
+        var document = Application.DocumentManager.MdiActiveDocument;
+        var editor = document.Editor;
+        var db = document.Database;
+    
+        var tr = db.TransactionManager.StartTransaction();
+
+        var promptResult = editor.SelectAll();
+    
+        var selectionSet = promptResult.Status == PromptStatus.OK ? promptResult.Value : null;
+    
+        if (selectionSet == null || selectionSet.Count < 1)
+            selectionSet = new SelectionSet();
+
+        var result = new List<ParametricEntity>();
+        
+        foreach (SelectedObject selectedObject in selectionSet)
+        {
+            var dbObject = tr.GetObject(selectedObject.ObjectId, OpenMode.ForRead);
+            if (dbObject is ParametricEntity res && res.Name == "ProjectData")
+                result.Add(res);
+        }
+        
+        tr.Commit();
+        return result.FirstOrDefault();
     }
 }

@@ -1,5 +1,6 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
 using HeatLoss.Domain.Enums;
+using HeatLoss.Utils.Enums;
 using NetTopologySuite.Geometries;
 
 namespace HeatLoss.BimAdapters.Models;
@@ -11,6 +12,7 @@ public class WallDto
     public Polygon Polygon { get; set; } = null!;
     public List<OpeningDto> Openings { get; set; } = new();
     public SurfacePosition Position { get; set; }
+    public CardinalDirection? CardinalDirection { get; set; }
     public double Thickness { get; set; }
     public double Width { get; set; }
     public double Height { get; set; }

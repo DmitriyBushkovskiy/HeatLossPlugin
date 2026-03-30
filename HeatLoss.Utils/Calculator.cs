@@ -111,6 +111,7 @@ public class Calculator
                 ThermalConductivity = wall.ThermalConductivity,
                 HeatTransferCoefficient = heatTransferCoefficient,
                 HeatLoss = Math.Round(wallArea * heatTransferCoefficient * temperatureDifference),
+                CardinalDirection = wall.CardinalDirection
             });
         return result;
     }
@@ -131,6 +132,7 @@ public class Calculator
             ThermalConductivity = opening.ThermalConductivity,
             HeatTransferCoefficient = heatTransferCoefficient,
             HeatLoss = Math.Round(area * heatTransferCoefficient * temperatureDifference),
+            CardinalDirection = opening.CardinalDirection,
         };
     }
 

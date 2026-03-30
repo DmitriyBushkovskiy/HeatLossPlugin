@@ -9,6 +9,7 @@ public class SurfaceHeatLossResult: IEquatable<SurfaceHeatLossResult>
     public string Mark { get; set; }
     public SurfaceType Type { get; init; }
     public SurfacePosition? Position { get; init; }
+    public CardinalDirection? CardinalDirection { get; init; }
     public double? Width { get; set; }
     public double? Height { get; set; }
     public double Area { get; init; }
@@ -29,6 +30,7 @@ public class SurfaceHeatLossResult: IEquatable<SurfaceHeatLossResult>
         return Type == other.Type && 
                Position == other.Position &&
                AdjacentSpaceNumber == other.AdjacentSpaceNumber &&
+               CardinalDirection == other.CardinalDirection &&
                Math.Abs(Area - other.Area) < 0.01 && 
                Math.Abs(TemperatureDifference - other.TemperatureDifference) < 0.01 && 
                Math.Abs(HeatLoss - other.HeatLoss) < 0.01;
@@ -38,7 +40,7 @@ public class SurfaceHeatLossResult: IEquatable<SurfaceHeatLossResult>
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Type, Position, Area, TemperatureDifference, HeatLoss, AdjacentSpaceNumber);
+        return HashCode.Combine(Type, Position, Area, TemperatureDifference, HeatLoss, AdjacentSpaceNumber, CardinalDirection);
     }
     
     public static bool operator ==(SurfaceHeatLossResult? left, SurfaceHeatLossResult? right)

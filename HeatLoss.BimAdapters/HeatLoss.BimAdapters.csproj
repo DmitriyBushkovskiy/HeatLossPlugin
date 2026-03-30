@@ -29,11 +29,16 @@
             <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\bin\nrxgatemgd.dll</HintPath>
             <Private>False</Private>
         </Reference>
+        <Reference Include="ncBIMParametricKit">
+            <HintPath>D:\NanoCadSDK\NCadBIMSDK\include-x64\ncBIMParametricKit.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\HeatLoss.Domain\HeatLoss.Domain.csproj" />
       <ProjectReference Include="..\HeatLoss.Geometry\HeatLoss.Geometry.csproj" />
+      <ProjectReference Include="..\HeatLoss.Utils\HeatLoss.Utils.csproj" />
     </ItemGroup>
 
 </Project>

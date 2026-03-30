@@ -11,4 +11,5 @@ public class Opening
     public double BottomLevel { get; set; }
     public double ThermalConductivity  { get; set; }
     public OpeningType Type { get; set; }
+    public CardinalDirection? CardinalDirection { get; set; }
 }
