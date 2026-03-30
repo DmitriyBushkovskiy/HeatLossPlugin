@@ -223,7 +223,7 @@ public class ReportGenerator
         sheetData.SetValueToCell($"G{rowIndex}", surfaceHeatLossResult.ThermalConductivity); // R
         sheetData.SetValueToCell($"H{rowIndex}", surfaceHeatLossResult.HeatTransferCoefficient); //K
         sheetData.SetValueToCell($"I{rowIndex}", surfaceHeatLossResult.TemperatureDifference); //Разность температур
-        sheetData.SetValueToCell($"J{rowIndex}", ""); // Поправочный коэффициент
+        sheetData.SetValueToCell($"J{rowIndex}", surfaceHeatLossResult.AdditionalCoefficient); // Поправочный коэффициент
         sheetData.SetValueToCell($"K{rowIndex}", surfaceHeatLossResult.HeatLoss * amount); //Теплопотери
         
         rowIndex++;

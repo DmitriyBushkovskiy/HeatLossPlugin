@@ -30,4 +30,21 @@ public static class CardinalDirectionExtensions
                 throw new NotImplementedException();
         }
     }
+    
+    public static double GetCoefficient(this CardinalDirection direction)
+    {
+        switch(direction)
+        {
+            case CardinalDirection.N: return 0.1;
+            case CardinalDirection.NE: return 0.1;
+            case CardinalDirection.E: return 0.1;
+            case CardinalDirection.SE: return 0.05;
+            case CardinalDirection.S: return 0;
+            case CardinalDirection.SW: return 0;
+            case CardinalDirection.W: return 0.05;
+            case CardinalDirection.NW: return 0.1;
+            default:
+                throw new NotImplementedException();
+        }
+    }
 }

@@ -96,6 +96,7 @@ public class Calculator
         var result = wall.Openings.Select(x => CalculateOpening(x, temperatureDifference)).ToList();
         var wallArea = Math.Round((wall.Width * wall.Height - wall.Openings.Sum(x => x.Height * x.Width))/1_000_000, 2);
         var heatTransferCoefficient = GetHeatTransferCoefficient(wall.ThermalConductivity);
+        var additionalCoefficient = 1 + (wall.CardinalDirection?.GetCoefficient() ?? 0.0);
         result.Add(
             new SurfaceHeatLossResult
             {
@@ -110,8 +111,9 @@ public class Calculator
                 TemperatureDifference = temperatureDifference,
                 ThermalConductivity = wall.ThermalConductivity,
                 HeatTransferCoefficient = heatTransferCoefficient,
-                HeatLoss = Math.Round(wallArea * heatTransferCoefficient * temperatureDifference),
-                CardinalDirection = wall.CardinalDirection
+                CardinalDirection = wall.CardinalDirection,
+                AdditionalCoefficient = additionalCoefficient,
+                HeatLoss = Math.Round(wallArea * heatTransferCoefficient * temperatureDifference * additionalCoefficient),
             });
         return result;
     }
@@ -120,6 +122,7 @@ public class Calculator
     {
         var area = Math.Round(opening.Width * opening.Height / 1_000_000, 2);
         var heatTransferCoefficient = GetHeatTransferCoefficient(opening.ThermalConductivity);
+        var additionalCoefficient = 1 + (opening.CardinalDirection?.GetCoefficient() ?? 0.0);
         return new SurfaceHeatLossResult
         {
             Name = opening.Name,
@@ -131,8 +134,9 @@ public class Calculator
             TemperatureDifference = temperatureDifference,
             ThermalConductivity = opening.ThermalConductivity,
             HeatTransferCoefficient = heatTransferCoefficient,
-            HeatLoss = Math.Round(area * heatTransferCoefficient * temperatureDifference),
             CardinalDirection = opening.CardinalDirection,
+            AdditionalCoefficient = additionalCoefficient,
+            HeatLoss = Math.Round(area * heatTransferCoefficient * temperatureDifference * additionalCoefficient)
         };
     }
 

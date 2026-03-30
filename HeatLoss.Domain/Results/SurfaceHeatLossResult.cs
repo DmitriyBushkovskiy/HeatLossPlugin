@@ -19,6 +19,7 @@ public class SurfaceHeatLossResult: IEquatable<SurfaceHeatLossResult>
     public double HeatLoss { get; init; }
     public double ThermalConductivity  { get; set; } // Коэффициент R
     public double HeatTransferCoefficient  { get; set; } // Коэффициент K = 1/R
+    public double AdditionalCoefficient { get; set; } = 1.0;
     
     public bool Equals(SurfaceHeatLossResult? other)
     {
