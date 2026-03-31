@@ -37,11 +37,6 @@ public class NanoCadAdapter
     private Dictionary<string, double> _materialsThermalConductivity = new ();
     private Dictionary<CardinalDirection, Vector2D> _cardinalDirections;
     
-    private List<Polygon> firstFloorGeometry;
-    private List<Polygon> secondFloorGeometry;
-    private List<Polygon> thirdFloorGeometry;
-    private List<Polygon> fourthFloorGeometry;
-    
     private Document document;
     private Editor editor;
 
@@ -357,10 +352,10 @@ public class NanoCadAdapter
     {
         var fistFloor = nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).First(); //TODO: что если несколько сеток осей?
         var firstFloorSpaces = _spaceDtos.Where(x => Math.Abs(x.BottomLevel - fistFloor.Position) < 1).ToList();
-        firstFloorGeometry = MyGeometry.GetCommonPerimeters(firstFloorSpaces.Select(x => x.GetPolygon()), 1000).ToList();
-        secondFloorGeometry = MyGeometry.CreatePolygonsWithOffset(firstFloorGeometry, -2000);
-        thirdFloorGeometry = MyGeometry.CreatePolygonsWithOffset(secondFloorGeometry, -2000);
-        fourthFloorGeometry = MyGeometry.CreatePolygonsWithOffset(thirdFloorGeometry, -2000);
+        var firstFloorGeometry = MyGeometry.GetCommonPerimeters(firstFloorSpaces.Select(x => x.GetPolygon()), 1000).ToList();
+        var secondFloorGeometry = MyGeometry.CreatePolygonsWithOffset(firstFloorGeometry, -2000);
+        var thirdFloorGeometry = MyGeometry.CreatePolygonsWithOffset(secondFloorGeometry, -2000);
+        var fourthFloorGeometry = MyGeometry.CreatePolygonsWithOffset(thirdFloorGeometry, -2000);
 
         var fourthArea = UnaryUnionOp.Union(fourthFloorGeometry);
         var thirdArea = UnaryUnionOp.Union(thirdFloorGeometry);
@@ -373,19 +368,39 @@ public class NanoCadAdapter
             var spacePolygon = UnaryUnionOp.Union(space.GetPolygon());
             if (fourthArea.Area > 0)
             {
-                floor.FourthFloorAreaArea = Math.Round(fourthArea.Intersection(spacePolygon).Area/1000000, 2);
+                floor.FloorAreas.Add(new FloorAreaDto
+                {
+                    FloorAreaNumber = FloorAreaNumber.Fourth,
+                    Area = Math.Round(fourthArea.Intersection(spacePolygon).Area/1000000, 2),
+                    ThermalConductivity = _projectData.FourthFloorAreaThermalConductivity
+                });
             }
             if (thirdArea.Area > 0)
             {
-                floor.ThirdFloorAreaArea = Math.Round(thirdArea.Intersection(spacePolygon).Area/1000000 - floor.FourthFloorAreaArea, 2);
+                floor.FloorAreas.Add(new FloorAreaDto
+                {
+                    FloorAreaNumber = FloorAreaNumber.Third,
+                    Area = Math.Round(thirdArea.Intersection(spacePolygon).Area/1000000 - floor.FloorAreas.Sum(x => x.Area), 2),
+                    ThermalConductivity = _projectData.ThirdFloorAreaThermalConductivity
+                });
             }
             if (secondArea.Area > 0)
             {
-                floor.SecondFloorAreaArea = Math.Round(secondArea.Intersection(spacePolygon).Area/1000000 - floor.ThirdFloorAreaArea - floor.FourthFloorAreaArea, 2);
+                floor.FloorAreas.Add(new FloorAreaDto
+                {
+                    FloorAreaNumber = FloorAreaNumber.Second,
+                    Area = Math.Round(secondArea.Intersection(spacePolygon).Area/1000000 - floor.FloorAreas.Sum(x => x.Area), 2),
+                    ThermalConductivity = _projectData.SecondFloorAreaThermalConductivity
+                });
             }
             if (firstArea.Area > 0)
             {
-                floor.FirstFloorAreaArea = Math.Round(firstArea.Intersection(spacePolygon).Area/1000000 - floor.SecondFloorAreaArea - floor.ThirdFloorAreaArea - floor.FourthFloorAreaArea, 2);
+                floor.FloorAreas.Add(new FloorAreaDto
+                {
+                    FloorAreaNumber = FloorAreaNumber.First,
+                    Area = Math.Round(firstArea.Intersection(spacePolygon).Area/1000000 - floor.FloorAreas.Sum(x => x.Area), 2),
+                    ThermalConductivity = _projectData.FirstFloorAreaThermalConductivity
+                });
             }
             space.Floor = floor;
         }
@@ -469,12 +484,11 @@ public class NanoCadAdapter
 
     private Building GetBuilding()
     {
-        var building = new Building
+        return new Building
         {
-            OutsideTemperature = _projectData.OutsideTemperature
+            OutsideTemperature = _projectData.OutsideTemperature,
+            Spaces = _spaceDtos.Select(x => x.ToSpace()).ToList()
         };
-        building.Spaces = _spaceDtos.Select(x => x.ToSpace()).ToList();
-        return building;
     }
 
     /// <summary>
@@ -576,7 +590,11 @@ public class NanoCadAdapter
         
         _projectData = new ProjectDataDto
         {
-            OutsideTemperature = double.Parse(projectData!.GetParameter("HL_OUTSIDE_TEMPERATURE")),
+            OutsideTemperature = double.Parse(projectData!.GetParameter("HL_OUTSIDE_TEMPERATURE"), NumberStyles.Any, CultureInfo.InvariantCulture),
+            FirstFloorAreaThermalConductivity = double.Parse(projectData!.GetParameter("HL_FLOOR_AREA1_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
+            SecondFloorAreaThermalConductivity = double.Parse(projectData!.GetParameter("HL_FLOOR_AREA2_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
+            ThirdFloorAreaThermalConductivity = double.Parse(projectData!.GetParameter("HL_FLOOR_AREA3_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
+            FourthFloorAreaThermalConductivity = double.Parse(projectData!.GetParameter("HL_FLOOR_AREA4_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
         };
 
         // определяем положение сторон света

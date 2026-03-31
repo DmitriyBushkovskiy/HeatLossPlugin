@@ -26,7 +26,7 @@ public class ReportGenerator
     public void GenerateReport(BuildingHeatLossResult buildingHeatLossResult)
     {
         var now = DateTime.Now;
-        string filePath = $"D:\\foo\\MyNewExcelFile-{now.ToString().Replace(':', '_')}.xlsx";
+        string filePath = $"D:\\foo\\HeatLossReport-{now.ToString().Replace(':', '_')}.xlsx";
         CreateExcelFile(filePath, buildingHeatLossResult);
     }
 

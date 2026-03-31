@@ -81,15 +81,9 @@ public static class NanoCadMapper
     
     public static List<FloorArea> ToFloorAreas(this FloorDto floorDto)
     {
-        var result = new List<FloorArea>();
-        if (floorDto.FirstFloorAreaArea > 0)
-            result.Add(new FloorArea(FloorAreaNumber.First, floorDto.FirstFloorAreaArea));
-        if (floorDto.SecondFloorAreaArea > 0)
-            result.Add(new FloorArea(FloorAreaNumber.Second, floorDto.SecondFloorAreaArea));
-        if (floorDto.ThirdFloorAreaArea > 0)
-            result.Add(new FloorArea(FloorAreaNumber.Third, floorDto.ThirdFloorAreaArea));
-        if (floorDto.FourthFloorAreaArea > 0)
-            result.Add(new FloorArea(FloorAreaNumber.Fourth, floorDto.FourthFloorAreaArea));
-        return result;
+        return floorDto.FloorAreas
+            .OrderBy(x => x.FloorAreaNumber)
+            .Select(x => new FloorArea(x.FloorAreaNumber, x.Area, x.ThermalConductivity))
+            .ToList();
     }
 }

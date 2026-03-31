@@ -19,7 +19,7 @@ public class Calculator
                 Name = space.Name,
                 Temperature = space.Temperature
             };
-            foreach (var wall in space.Walls)
+            foreach (var wall in space.Walls.OrderByDescending(x => x.Position).ThenBy(x => x.AdjacentSpaceNumber))
             {
                 var temperatureDifference = space.Temperature 
                                             - (wall.Position == SurfacePosition.Outside 
@@ -69,8 +69,7 @@ public class Calculator
             foreach (var floorArea in space.FloorAreas)
             {
                 var temperatureDifference = space.Temperature - building.OutsideTemperature;
-                var floorAreaThermalConductivity = GetFloorThermalConductivity(floorArea.FloorAreaNumber);
-                var heatTransferCoefficient = GetHeatTransferCoefficient(floorAreaThermalConductivity);
+                var heatTransferCoefficient = GetHeatTransferCoefficient(floorArea.ThermalConductivity);
 
                 var floorAreaResult = new SurfaceHeatLossResult
                 {
@@ -78,7 +77,7 @@ public class Calculator
                     Area = floorArea.Area,
                     Type = SurfaceType.Floor,
                     TemperatureDifference = temperatureDifference,
-                    ThermalConductivity = floorAreaThermalConductivity,
+                    ThermalConductivity = floorArea.ThermalConductivity,
                     HeatTransferCoefficient = heatTransferCoefficient,
                     HeatLoss = Math.Round(floorArea.Area * heatTransferCoefficient * temperatureDifference),
                     Comment = ((int)floorArea.FloorAreaNumber).ToString()
@@ -97,7 +96,7 @@ public class Calculator
         var wallArea = Math.Round((wall.Width * wall.Height - wall.Openings.Sum(x => x.Height * x.Width))/1_000_000, 2);
         var heatTransferCoefficient = GetHeatTransferCoefficient(wall.ThermalConductivity);
         var additionalCoefficient = 1 + (wall.CardinalDirection?.GetCoefficient() ?? 0.0);
-        result.Add(
+        result.Insert(0,
             new SurfaceHeatLossResult
             {
                 Name = wall.Position ==  SurfacePosition.Outside ? "Наружная стена" : $"Внутренняя стена\n(с пом. {wall.AdjacentSpaceNumber})",
@@ -152,21 +151,4 @@ public class Calculator
 
     private double GetHeatTransferCoefficient(double thermalConductivity)
         => Math.Round(1 / thermalConductivity, 3);
-
-    private double GetFloorThermalConductivity(FloorAreaNumber floorAreaNumber)
-    {
-        switch (floorAreaNumber)
-        {
-            case FloorAreaNumber.First:
-                return 2.1;            
-            case FloorAreaNumber.Second:
-                return 4.3;            
-            case FloorAreaNumber.Third:
-                return 8.6;            
-            case FloorAreaNumber.Fourth:
-                return 14.2;
-            default: 
-                throw new ArgumentException();
-        }
-    }
 }

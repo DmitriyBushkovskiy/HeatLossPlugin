@@ -1,4 +1,5 @@
-﻿using BIMStructureMgd.DatabaseObjects;
+﻿using System.Globalization;
+using BIMStructureMgd.DatabaseObjects;
 using HeatLoss.BimAdapters.Models;
 using HeatLoss.Geometry.Extensions;
 using NetTopologySuite.Geometries;
@@ -32,5 +33,5 @@ public static class SpaceEntityExtensions
         => space.GetElementData().Parameters.FirstOrDefault(x => x.Name == parameterName)?.Value ?? string.Empty;
     
     public static double GetBottomLevel(this SpaceEntity space)
-        => double.Parse(space.GetParameter("AEC_ELEMENT_POS_Z"));
+        => double.Parse(space.GetParameter("AEC_ELEMENT_POS_Z"), NumberStyles.Any, CultureInfo.InvariantCulture);
 }

@@ -22,10 +22,26 @@ public class ProjectDataObject : EntitySource<ProjectDataSpecification>
         {
             Name = "ProjectData";
             Temperature = 0;
+            FloorAreaOneThermalConductivity = 2.1;
+            FloorAreaTwoThermalConductivity = 4.3;
+            FloorAreaThreeThermalConductivity = 8.6;
+            FloorAreaFourThermalConductivity = 14.2;
         }
 
         [ParameterDefinition("HL_OUTSIDE_TEMPERATURE", "Температура наружного воздуха, °С")]
         public SpecificationParameter Temperature { get; set; }
+        
+        [ParameterDefinition("HL_FLOOR_AREA1_THERMAL_CONDUCTIVITY", "Сопротивление теплопередаче 1 зоны пола, м²∙°С/Вт")]
+        public SpecificationParameter FloorAreaOneThermalConductivity { get; set; }
+        
+        [ParameterDefinition("HL_FLOOR_AREA2_THERMAL_CONDUCTIVITY", "Сопротивление теплопередаче 2 зоны пола, м²∙°С/Вт")]
+        public SpecificationParameter FloorAreaTwoThermalConductivity { get; set; }
+        
+        [ParameterDefinition("HL_FLOOR_AREA3_THERMAL_CONDUCTIVITY", "Сопротивление теплопередаче 3 зоны пола, м²∙°С/Вт")]
+        public SpecificationParameter FloorAreaThreeThermalConductivity { get; set; }
+        
+        [ParameterDefinition("HL_FLOOR_AREA4_THERMAL_CONDUCTIVITY", "Сопротивление теплопередаче 4 зоны пола, м²∙°С/Вт")]
+        public SpecificationParameter FloorAreaFourThermalConductivity { get; set; }
     }
 
     public class ProjectDataView2D : EntityView2D<ProjectDataObject>
