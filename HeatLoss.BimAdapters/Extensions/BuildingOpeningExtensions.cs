@@ -30,7 +30,9 @@ public static class BuildingOpeningExtensions
             _ => throw new Exception()
         };
         
-        return MyGeometry.CreatePolygonByLine(
+        var geometry = new HeatLossGeometry();
+        
+        return geometry.CreatePolygonByLine(
             new LineString( new []{
                 new Coordinate(opening.BasePoint.X, opening.BasePoint.Y).Round(),
                 new Coordinate(endPoint.X, endPoint.Y).Round()

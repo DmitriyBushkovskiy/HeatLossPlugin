@@ -6,12 +6,12 @@ using NetTopologySuite.Operation.Union;
 
 namespace HeatLoss.Geometry;
 
-public static class MyGeometry
+public class HeatLossGeometry
 {
     /// <summary>
     /// Получение общего периметра для нескольких полигонов
     /// </summary>
-    public static IEnumerable<Polygon> GetCommonPerimeters(IEnumerable<Polygon> polygons, double offset)
+    public IEnumerable<Polygon> GetCommonPerimeters(IEnumerable<Polygon> polygons, double offset)
     {
         var bufferParams = new BufferParameters
         {
@@ -36,7 +36,7 @@ public static class MyGeometry
     /// <summary>
     /// Построение полигонов с отступом
     /// </summary>
-    public static List<Polygon> CreatePolygonsWithOffset(List<Polygon> previousZones, double offset)
+    public List<Polygon> CreatePolygonsWithOffset(List<Polygon> previousZones, double offset)
     {
         if (previousZones.Count == 0)
             return new List<Polygon>();
@@ -73,7 +73,7 @@ public static class MyGeometry
         return result;
     }
     
-    public static Coordinate FindIntersectionPoint(
+    public Coordinate FindIntersectionPoint(
         Coordinate firstLineStart, 
         Coordinate firstLineEnd, 
         Coordinate secondLineStart, 
@@ -98,13 +98,13 @@ public static class MyGeometry
         return new Coordinate(x, y);
     }
     
-    public static Coordinate FindIntersectionPoint(LineString firstLine, LineString secondLine)
+    public Coordinate FindIntersectionPoint(LineString firstLine, LineString secondLine)
         => FindIntersectionPoint(firstLine.StartPoint.Coordinate, firstLine.EndPoint.Coordinate, secondLine.StartPoint.Coordinate, secondLine.EndPoint.Coordinate);
     
     /// <summary>
     /// Создание полигона для фактического участка стены помещения
     /// </summary>
-    public static Polygon CreatePolygonByLine(LineString line, double leftOffset, double rightOffset)
+    public Polygon CreatePolygonByLine(LineString line, double leftOffset, double rightOffset)
     {
         var leftLine = MoveLine(line, - leftOffset);
         var rightLine = MoveLine(line, rightOffset);
@@ -119,7 +119,7 @@ public static class MyGeometry
         }));
     }
 
-    public static LineString MoveLine(LineString lineString, double offset)
+    public LineString MoveLine(LineString lineString, double offset)
     {
         var dx = lineString.EndPoint.X - lineString.StartPoint.X;
         var dy = lineString.EndPoint.Y - lineString.StartPoint.Y;
@@ -138,7 +138,7 @@ public static class MyGeometry
         });
     }
     
-    public static Vector2D GetInnerPerpendicular(Polygon polygon, LineString edge)
+    public Vector2D GetInnerPerpendicular(Polygon polygon, LineString edge)
     {
         var a = edge.GetCoordinateN(0);
         var b = edge.GetCoordinateN(1);

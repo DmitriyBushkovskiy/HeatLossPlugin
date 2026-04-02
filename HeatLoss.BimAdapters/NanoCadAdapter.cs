@@ -39,6 +39,7 @@ public class NanoCadAdapter
     
     private Document document;
     private Editor editor;
+    private readonly HeatLossGeometry _geometry;
 
     private ProjectDataDto _projectData;
     private readonly List<SpaceDto> _spaceDtos = new();
@@ -47,6 +48,7 @@ public class NanoCadAdapter
     {
         document = Application.DocumentManager.MdiActiveDocument;
         editor = document.Editor;
+        _geometry = new HeatLossGeometry();
     }
 
     public Building InitBuildingInfo()
@@ -352,10 +354,10 @@ public class NanoCadAdapter
     {
         var fistFloor = nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).First(); //TODO: что если несколько сеток осей?
         var firstFloorSpaces = _spaceDtos.Where(x => Math.Abs(x.BottomLevel - fistFloor.Position) < 1).ToList();
-        var firstFloorGeometry = MyGeometry.GetCommonPerimeters(firstFloorSpaces.Select(x => x.GetPolygon()), 1000).ToList();
-        var secondFloorGeometry = MyGeometry.CreatePolygonsWithOffset(firstFloorGeometry, -2000);
-        var thirdFloorGeometry = MyGeometry.CreatePolygonsWithOffset(secondFloorGeometry, -2000);
-        var fourthFloorGeometry = MyGeometry.CreatePolygonsWithOffset(thirdFloorGeometry, -2000);
+        var firstFloorGeometry = _geometry.GetCommonPerimeters(firstFloorSpaces.Select(x => x.GetPolygon()), 1000).ToList();
+        var secondFloorGeometry = _geometry.CreatePolygonsWithOffset(firstFloorGeometry, -2000);
+        var thirdFloorGeometry = _geometry.CreatePolygonsWithOffset(secondFloorGeometry, -2000);
+        var fourthFloorGeometry = _geometry.CreatePolygonsWithOffset(thirdFloorGeometry, -2000);
 
         var fourthArea = UnaryUnionOp.Union(fourthFloorGeometry);
         var thirdArea = UnaryUnionOp.Union(thirdFloorGeometry);
@@ -495,14 +497,14 @@ public class NanoCadAdapter
     /// Создание полигона для фактического участка стены помещения
     /// </summary>
     private Polygon CreateWallPolygon(LineString baseLine, double internalOffset, double externalOffset)
-        => MyGeometry.CreatePolygonByLine(baseLine, internalOffset, externalOffset);
+        => _geometry.CreatePolygonByLine(baseLine, internalOffset, externalOffset);
     
     /// <summary>
     /// Получение стороны света ограждающей конструкции
     /// </summary>
     private CardinalDirection GetCardinalDirection(LineString spaceEdge, Polygon surfacePolygon)
     {
-        var vect = MyGeometry.GetInnerPerpendicular(surfacePolygon, spaceEdge);
+        var vect = _geometry.GetInnerPerpendicular(surfacePolygon, spaceEdge);
         
         var minAngle = Math.PI;
         var cardinalDirection = CardinalDirection.N;
@@ -536,11 +538,11 @@ public class NanoCadAdapter
                     var nextEdge = spaceEdges[i == spaceEdges.Count - 1 ? 0 : i + 1];
                     var offset = - currentEdge.ModelWall!.Thickness / 2;
 
-                    var newLine = MyGeometry.MoveLine(currentEdge.LineString, offset);
+                    var newLine = _geometry.MoveLine(currentEdge.LineString, offset);
                     
                     // новые точки пересечения
-                    var newIntersectionStartPoint = MyGeometry.FindIntersectionPoint(newLine, previousEdge.LineString);
-                    var newIntersectionEndPoint = MyGeometry.FindIntersectionPoint(newLine, nextEdge.LineString);
+                    var newIntersectionStartPoint = _geometry.FindIntersectionPoint(newLine, previousEdge.LineString);
+                    var newIntersectionEndPoint = _geometry.FindIntersectionPoint(newLine, nextEdge.LineString);
                     
                     // меняем координаты отрезков
                     previousEdge.ChangeCoordinates(previousEdge.Start, newIntersectionStartPoint);

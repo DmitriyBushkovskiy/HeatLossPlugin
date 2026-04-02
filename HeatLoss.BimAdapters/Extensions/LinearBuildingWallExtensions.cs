@@ -42,7 +42,9 @@ public static class LinearBuildingWallExtensions
             _ => throw new Exception()
         };
         
-        return MyGeometry.CreatePolygonByLine(
+        var geometry = new HeatLossGeometry();
+        
+        return geometry.CreatePolygonByLine(
             new LineString( new []{
                 new Coordinate(wall.StartPoint.X, wall.StartPoint.Y).Round(),
                 new Coordinate(wall.EndPoint.X, wall.EndPoint.Y).Round()
