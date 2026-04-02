@@ -1,26 +1,26 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
+using HeatLoss.Domain.Surfaces;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.BimAdapters.Models;
+namespace HeatLoss.BimAdapters.DTO;
 
 public class SpaceDto
 {
-    private readonly SpaceEntity _spaceEntity;
     public long Id { get; set; }
-    public string Number { get; init; }
-    public string Name { get; init; }
+    public string Number { get; init; } = null!;
+    public string Name { get; init; } = null!;
     public FloorDto? Floor { get; set; }
-    public List<CeilingDto> Ceiling { get; init; } = new();
-    public List<SpaceEdgeDto> Edges { get; set; } = new();
-    public double BottomLevel  { get; set; }
-    public double Height { get; set; }
-    public double Temperature { get; set; }
+    public List<CeilingDto> Ceiling { get; } = new();
+    public List<SpaceEdgeDto> Edges { get; } = new();
+    public double BottomLevel  { get; init; }
+    public double Height { get; init; }
+    public double Temperature { get; init; }
     
     public Polygon GetPolygon()
     {
-        var r = Edges.Select(x => x.Start).ToList();
-        r.Add(r.First());
-        return new Polygon(new LinearRing(r.ToArray()));
+        var coordinates = Edges.Select(x => x.Start).ToList();
+        coordinates.Add(coordinates.First());
+        return new Polygon(new LinearRing(coordinates.ToArray()));
     }
 
     public double GetVerticalIntersectionLenght(SpaceDto anotherSpace)
@@ -31,12 +31,25 @@ public class SpaceDto
     
     public (double bottom, double top) GetVerticalIntersectionLevels(SpaceDto anotherSpace)
     {
-        return (Math.Max(BottomLevel , anotherSpace.BottomLevel), Math.Min(BottomLevel + Height, anotherSpace.BottomLevel +  anotherSpace.Height));
+        return (Math.Max(BottomLevel , anotherSpace.BottomLevel), Math.Min(BottomLevel + Height, anotherSpace.BottomLevel + anotherSpace.Height));
     }
 
     public bool HaveVerticalIntersection(SpaceDto anotherSpace)
     {
         return GetVerticalIntersectionLenght(anotherSpace) > 0;
+    }
+    
+    public Space ToSpace()
+    {
+        return new Space
+        {
+            Number = Number,
+            Name = Name,
+            Temperature = Temperature,
+            Walls = Edges.SelectMany(x => x.Walls).Select(x => x.ToWall()).ToList(),
+            FloorAreas = Floor?.ToFloorAreas() ?? new List<FloorArea>(),
+            Ceilings = Ceiling.Select(x => x.ToCeiling()).ToList(),
+        };
     }
     
     private (double bottom, double top) GetVerticalIntersectionLevels(LinearBuildingWall wall)

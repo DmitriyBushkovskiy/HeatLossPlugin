@@ -1,10 +1,9 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
-using HeatLoss.Domain.Calculation;
 using HeatLoss.Domain.Enums;
+using HeatLoss.Domain.Extensions;
 using HeatLoss.Domain.Results;
-using HeatLoss.Domain.Results.Enums;
 using HeatLoss.Utils.Enums;
 using HeatLoss.Utils.Extensions;
 using HeatLoss.Utils.Styles;

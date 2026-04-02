@@ -1,25 +1,24 @@
 ﻿using HeatLoss.Domain.Enums;
-using HeatLoss.Domain.Results.Enums;
 
 namespace HeatLoss.Domain.Results;
 
 public class SurfaceHeatLossResult: IEquatable<SurfaceHeatLossResult>
 {
-    public string Name { get; set; }
-    public string Mark { get; set; }
+    public string Name { get; init; } = null!;
+    public string Mark { get; init; } = null!;
     public SurfaceType Type { get; init; }
     public SurfacePosition? Position { get; init; }
     public CardinalDirection? CardinalDirection { get; init; }
-    public double? Width { get; set; }
-    public double? Height { get; set; }
+    public double? Width { get; init; }
+    public double? Height { get; init; }
     public double Area { get; init; }
     public string? AdjacentSpaceNumber  { get; init; }
     public string Comment { get; set; } = string.Empty;
     public double TemperatureDifference { get; init; }
     public double HeatLoss { get; init; }
-    public double ThermalConductivity  { get; set; } // Коэффициент R
-    public double HeatTransferCoefficient  { get; set; } // Коэффициент K = 1/R
-    public double AdditionalCoefficient { get; set; } = 1.0;
+    public double ThermalConductivity  { get; init; } // Коэффициент R
+    public double HeatTransferCoefficient  { get; init; } // Коэффициент K = 1/R
+    public double AdditionalCoefficient { get; init; } = 1.0;
     
     public bool Equals(SurfaceHeatLossResult? other)
     {

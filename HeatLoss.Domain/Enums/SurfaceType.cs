@@ -1,4 +1,4 @@
-﻿namespace HeatLoss.Domain.Results.Enums;
+﻿namespace HeatLoss.Domain.Enums;
 
 public enum SurfaceType
 {

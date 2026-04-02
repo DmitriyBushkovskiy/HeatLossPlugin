@@ -1,12 +1,12 @@
 ﻿using HeatLoss.Domain.Enums;
 
-namespace HeatLoss.Domain.Calculation;
+namespace HeatLoss.Domain.Surfaces;
 
 public class FloorArea
 {
-    public FloorAreaNumber FloorAreaNumber { get; init; }
-    public double Area { get; init; }
-    public double ThermalConductivity  { get; set; }
+    public FloorAreaNumber FloorAreaNumber { get; }
+    public double Area { get; }
+    public double ThermalConductivity  { get; }
 
     public FloorArea(FloorAreaNumber floorAreaNumber, double area, double thermalConductivity)
     {

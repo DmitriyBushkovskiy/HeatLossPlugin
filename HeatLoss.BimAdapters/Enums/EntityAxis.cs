@@ -1,4 +1,4 @@
-﻿namespace HeatLoss.BimAdapters.Models;
+﻿namespace HeatLoss.BimAdapters.Enums;
 
 public enum EntityAxis
 {

@@ -1,5 +1,5 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.BimAdapters.Models;
+using HeatLoss.BimAdapters.Enums;
 using HeatLoss.Geometry;
 using HeatLoss.Geometry.Extensions;
 using NetTopologySuite.Geometries;

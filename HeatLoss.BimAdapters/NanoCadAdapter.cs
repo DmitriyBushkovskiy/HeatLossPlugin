@@ -2,12 +2,12 @@
 using BIMStructureMgd.Common;
 using BIMStructureMgd.DatabaseObjects;
 using BIMStructureMgd.ObjectProperties;
+using HeatLoss.BimAdapters.DTO;
 using HeatLoss.BimAdapters.Extensions;
-using HeatLoss.BimAdapters.Models;
 using HeatLoss.BimAdapters.Objects;
 using HeatLoss.BimAdapters.Utils;
-using HeatLoss.Domain.Calculation;
 using HeatLoss.Domain.Enums;
+using HeatLoss.Domain.Surfaces;
 using HeatLoss.Geometry;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;

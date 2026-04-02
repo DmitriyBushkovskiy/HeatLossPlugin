@@ -1,7 +1,7 @@
-﻿using HeatLoss.Domain.Calculation;
-using HeatLoss.Domain.Enums;
+﻿using HeatLoss.Domain.Enums;
+using HeatLoss.Domain.Extensions;
 using HeatLoss.Domain.Results;
-using HeatLoss.Domain.Results.Enums;
+using HeatLoss.Domain.Surfaces;
 
 namespace HeatLoss.Utils;
 

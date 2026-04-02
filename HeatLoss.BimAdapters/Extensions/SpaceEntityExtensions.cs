@@ -1,6 +1,6 @@
 ﻿using System.Globalization;
 using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.BimAdapters.Models;
+using HeatLoss.BimAdapters.DTO;
 using HeatLoss.Geometry.Extensions;
 using NetTopologySuite.Geometries;
 
@@ -13,7 +13,7 @@ public static class SpaceEntityExtensions
         var coordinates = spaceEntity.GetFloorContours()
             .Single()
             .ConvertTo(false)
-            .GetVertex2ds()
+            .ToVertex2ds()
             .Select(x => new Coordinate(x.Position.X, x.Position.Y).Round())
             .ToList();
         for (var i = 0; i < coordinates.Count; i++)
@@ -25,8 +25,23 @@ public static class SpaceEntityExtensions
         return spaceEntity.GetFloorContours()
             .Single()
             .ConvertTo(false)
-            .GetVertex2ds()
+            .ToVertex2ds()
             .Select(x => new Coordinate(x.Position.X, x.Position.Y).Round());
+    }
+    
+    public static SpaceDto ToSpaceDto(this SpaceEntity spaceEntity)
+    {
+        return new SpaceDto
+        {
+            Id = spaceEntity.Id.ToLong(),
+            Name = spaceEntity.Name,
+            Number = spaceEntity.Number,
+            BottomLevel = spaceEntity.GetBottomLevel(),
+            Height = spaceEntity.Height,
+            Temperature = double.TryParse(spaceEntity.GetParameter("HL_SPACE_TEMPERATURE"), NumberStyles.Any , CultureInfo.InvariantCulture, out var temperature)
+                ? temperature
+                : 0,
+        };
     }
     
     public static string GetParameter(this SpaceEntity space, string parameterName)

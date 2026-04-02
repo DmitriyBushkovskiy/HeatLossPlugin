@@ -4,7 +4,7 @@ namespace HeatLoss.BimAdapters.Extensions;
 
 public static class Polyline2dExtensions
 {
-    public static IEnumerable<Vertex2d> GetVertex2ds(this Polyline2d? polyline)
+    public static IEnumerable<Vertex2d> ToVertex2ds(this Polyline2d? polyline)
     {
         if  (polyline == null)
             yield break;

@@ -1,5 +1,5 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.BimAdapters.Models;
+using HeatLoss.BimAdapters.Enums;
 using HeatLoss.Domain.Enums;
 using HeatLoss.Geometry;
 using HeatLoss.Geometry.Extensions;
@@ -21,11 +21,6 @@ public static class LinearBuildingWallExtensions
             default:
                 throw new Exception("Неизвестный параметр LOCATION: " + location);
         }
-    }
-    
-    private static EntityAxis GetAxis(this LinearBuildingWall wall)
-    {
-        return Enum.Parse<EntityAxis>(wall.GetParameter("AEC_PART_AXIS"));
     }
     
     public static Polygon GetPolygon(this LinearBuildingWall wall)
@@ -54,5 +49,10 @@ public static class LinearBuildingWallExtensions
             }),
             leftOffset,
             rightOffset);
+    }
+    
+    private static EntityAxis GetAxis(this LinearBuildingWall wall)
+    {
+        return Enum.Parse<EntityAxis>(wall.GetParameter("AEC_PART_AXIS"));
     }
 }

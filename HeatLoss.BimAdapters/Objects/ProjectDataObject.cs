@@ -16,7 +16,7 @@ public class ProjectDataObject : EntitySource<ProjectDataSpecification>
         }
     }
 
-    public class ProjectDataSpecification : EntitySpecification
+    public sealed class ProjectDataSpecification : EntitySpecification
     {
         public ProjectDataSpecification() 
         {
