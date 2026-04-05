@@ -1,6 +1,6 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
 
-namespace HeatLoss.Utils.Extensions;
+namespace HeatLoss.Reports.Extensions;
 
 public static class SheetDataExtensions
 {

@@ -3,9 +3,9 @@ using HeatLoss.Domain.Extensions;
 using HeatLoss.Domain.Results;
 using HeatLoss.Domain.Surfaces;
 
-namespace HeatLoss.Utils;
+namespace HeatLoss.Calculations;
 
-public class Calculator
+public class HeatLossCalculator
 {
     public BuildingHeatLossResult Calculate(Building building)
     {

@@ -8,11 +8,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.NanoCadAdapter", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.Geometry", "HeatLoss.Geometry\HeatLoss.Geometry.csproj", "{E7F85936-AAD4-420D-B349-4EF99EEC34E6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.Utils", "HeatLoss.Utils\HeatLoss.Utils.csproj", "{C034EB84-E101-4E50-91B9-9361A71E033F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.Reports", "HeatLoss.Reports\HeatLoss.Reports.csproj", "{C034EB84-E101-4E50-91B9-9361A71E033F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{5BC8FFA4-0839-4293-84CC-09540B55D14B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BimAdapters", "BimAdapters", "{89D0080E-AE36-45CA-9B9F-E82F9461724A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.Calculations", "HeatLoss.Calculations\HeatLoss.Calculations.csproj", "{9D3D5A7F-71A1-431C-9E38-30BEDDEE853E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +46,10 @@ Global
 		{5BC8FFA4-0839-4293-84CC-09540B55D14B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5BC8FFA4-0839-4293-84CC-09540B55D14B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5BC8FFA4-0839-4293-84CC-09540B55D14B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9D3D5A7F-71A1-431C-9E38-30BEDDEE853E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9D3D5A7F-71A1-431C-9E38-30BEDDEE853E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9D3D5A7F-71A1-431C-9E38-30BEDDEE853E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9D3D5A7F-71A1-431C-9E38-30BEDDEE853E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{861283FB-7488-4FC2-9B5C-BF386C9DA620} = {89D0080E-AE36-45CA-9B9F-E82F9461724A}

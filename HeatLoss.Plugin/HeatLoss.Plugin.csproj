@@ -36,9 +36,10 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\HeatLoss.Calculations\HeatLoss.Calculations.csproj" />
       <ProjectReference Include="..\HeatLoss.NanoCadAdapter\HeatLoss.NanoCadAdapter.csproj" />
       <ProjectReference Include="..\HeatLoss.Domain\HeatLoss.Domain.csproj" />
-      <ProjectReference Include="..\HeatLoss.Utils\HeatLoss.Utils.csproj" />
+      <ProjectReference Include="..\HeatLoss.Reports\HeatLoss.Reports.csproj" />
     </ItemGroup>
 
 </Project>

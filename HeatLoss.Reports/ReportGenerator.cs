@@ -4,11 +4,10 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using HeatLoss.Domain.Enums;
 using HeatLoss.Domain.Extensions;
 using HeatLoss.Domain.Results;
-using HeatLoss.Utils.Enums;
-using HeatLoss.Utils.Extensions;
-using HeatLoss.Utils.Styles;
+using HeatLoss.Reports.Extensions;
+using HeatLoss.Reports.Styles;
 
-namespace HeatLoss.Utils;
+namespace HeatLoss.Reports;
 
 public class ReportGenerator
 {

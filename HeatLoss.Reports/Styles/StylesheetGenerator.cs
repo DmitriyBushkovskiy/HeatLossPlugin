@@ -1,7 +1,7 @@
 ﻿using DocumentFormat.OpenXml.Spreadsheet;
-using HeatLoss.Utils.Styles.CustomStyles;
+using HeatLoss.Reports.Styles.CustomStyles;
 
-namespace HeatLoss.Utils.Styles;
+namespace HeatLoss.Reports.Styles;
 
 public static class StylesheetGenerator
 {

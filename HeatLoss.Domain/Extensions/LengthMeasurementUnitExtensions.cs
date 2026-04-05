@@ -1,6 +1,6 @@
-﻿using HeatLoss.Utils.Enums;
+﻿using HeatLoss.Domain.Enums;
 
-namespace HeatLoss.Utils.Extensions;
+namespace HeatLoss.Domain.Extensions;
 
 public  static class LengthMeasurementUnitExtensions
 {

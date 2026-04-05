@@ -1,7 +1,7 @@
 ﻿using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Spreadsheet;
 
-namespace HeatLoss.Utils.Styles.CustomStyles;
+namespace HeatLoss.Reports.Styles.CustomStyles;
 
 public static class CustomFills
 {

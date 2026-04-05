@@ -1,4 +1,4 @@
-﻿namespace HeatLoss.Utils.Enums;
+﻿namespace HeatLoss.Domain.Enums;
 
 public enum LengthMeasurementUnit
 {
