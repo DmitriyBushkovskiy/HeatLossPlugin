@@ -27,36 +27,36 @@ namespace HeatLoss.NanoCadAdapter;
 
 public class Adapter
 {
-    private List<SpaceEntity> nanocadSpaces;
-    private List<LinearBuildingWall> nanocadWalls;
-    private List<BuildingOpening> nanocadOpenings;
-    private List<CoordinateGridRef> nanocadGrids;
-    private List<BuildingSlab> nanocadSlabs;
+    private List<SpaceEntity> _nanocadSpaces = new();
+    private List<LinearBuildingWall> _nanocadWalls  = new();
+    private List<BuildingOpening> _nanocadOpenings = new();
+    private List<CoordinateGridRef> _nanocadGrids = new();
+    private List<BuildingSlab> _nanocadSlabs = new();
 
-    private Dictionary<string, double> _materialsThermalConductivity = new ();
-    private Dictionary<CardinalDirection, Vector2D> _cardinalDirections;
+    private readonly Dictionary<string, double> _materialsThermalConductivity = new ();
+    private Dictionary<CardinalDirection, Vector2D> _cardinalDirections = new ();
     
-    private Document document;
-    private Editor editor;
+    private readonly Document _document;
+    private readonly Editor _editor;
     private readonly HeatLossGeometry _geometry;
 
-    private ProjectDataDto _projectData;
+    private ProjectDataDto? _projectData;
     private readonly List<SpaceDto> _spaceDtos = new();
     
     public Adapter()
     {
-        document = Application.DocumentManager.MdiActiveDocument;
-        editor = document.Editor;
+        _document = Application.DocumentManager.MdiActiveDocument;
+        _editor = _document.Editor;
         _geometry = new HeatLossGeometry();
     }
 
     public Building InitBuildingInfo()
     {
-        nanocadSpaces = FindObjects<SpaceEntity>().ToList();
-        nanocadWalls = FindObjects<LinearBuildingWall>().ToList();
-        nanocadOpenings = FindObjects<BuildingOpening>().ToList();
-        nanocadGrids = FindObjects<CoordinateGridRef>().ToList();
-        nanocadSlabs = FindObjects<BuildingSlab>().ToList();
+        _nanocadSpaces = FindObjects<SpaceEntity>().ToList();
+        _nanocadWalls = FindObjects<LinearBuildingWall>().ToList();
+        _nanocadOpenings = FindObjects<BuildingOpening>().ToList();
+        _nanocadGrids = FindObjects<CoordinateGridRef>().ToList();
+        _nanocadSlabs = FindObjects<BuildingSlab>().ToList();
         
         InitProjectData();
         
@@ -68,7 +68,7 @@ public class Adapter
             var eww = space.Edges.Where(e => e.ModelWall == null);
             if (eww.Count() > 0)
             {
-                editor.WriteMessage($"----- Room: {space.Number}. {eww.Count()} edges without wall");
+                _editor.WriteMessage($"----- Room: {space.Number}. {eww.Count()} edges without wall");
                 foreach (var e in eww)
                 {
                     Print(new []{new Line(new Point3d(e.Start.X, e.Start.Y, space.BottomLevel), new Point3d(e.End.X, e.End.Y, space.BottomLevel))}, Color.FromRgb(255, 0, 0));
@@ -133,7 +133,7 @@ public class Adapter
         
 
         
-        editor.WriteMessage($"!!!! Finished !!!!!");
+        _editor.WriteMessage($"!!!! Finished !!!!!");
 
         return GetBuilding();
     }
@@ -184,7 +184,7 @@ public class Adapter
 
     private void  CreateSpaces()
     {
-        foreach (var nanocadSpace in nanocadSpaces)
+        foreach (var nanocadSpace in _nanocadSpaces)
         {
             // создаем помещение
             var spaceDto = nanocadSpace.ToSpaceDto();
@@ -197,7 +197,7 @@ public class Adapter
                 // создаем сторону помещения
                 var spaceEdge = new SpaceEdgeDto(currentCoordinate, nextCoordinate);
                 
-                var possibleWalls = nanocadWalls
+                var possibleWalls = _nanocadWalls
                     .Where(w => spaceDto.HaveVerticalIntersection(w))
                     .ToList();
                 // находим стену, которой принадлежит граница помещения
@@ -212,7 +212,7 @@ public class Adapter
                 }
                 
                 // находим проемы, которые находятся на границе помещения
-                var possibleOpenings = nanocadOpenings
+                var possibleOpenings = _nanocadOpenings
                     .Where(o => spaceDto.IsOpeningBelong(o))
                     .ToList();
                 
@@ -351,7 +351,7 @@ public class Adapter
 
     private void CreateFloorAreas()
     {
-        var fistFloor = nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).First(); //TODO: что если несколько сеток осей?
+        var fistFloor = _nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).First(); //TODO: что если несколько сеток осей?
         var firstFloorSpaces = _spaceDtos.Where(x => Math.Abs(x.BottomLevel - fistFloor.Position) < 1).ToList();
         var firstFloorGeometry = _geometry.GetCommonPerimeters(firstFloorSpaces.Select(x => x.GetPolygon()), 1000).ToList();
         var secondFloorGeometry = _geometry.CreatePolygonsWithOffset(firstFloorGeometry, -2000);
@@ -373,7 +373,7 @@ public class Adapter
                 {
                     FloorAreaNumber = FloorAreaNumber.Fourth,
                     Area = Math.Round(fourthArea.Intersection(spacePolygon).Area/1000000, 2),
-                    ThermalConductivity = _projectData.FourthFloorAreaThermalConductivity
+                    ThermalConductivity = _projectData!.FourthFloorAreaThermalConductivity
                 });
             }
             if (thirdArea.Area > 0)
@@ -382,7 +382,7 @@ public class Adapter
                 {
                     FloorAreaNumber = FloorAreaNumber.Third,
                     Area = Math.Round(thirdArea.Intersection(spacePolygon).Area/1000000 - floor.FloorAreas.Sum(x => x.Area), 2),
-                    ThermalConductivity = _projectData.ThirdFloorAreaThermalConductivity
+                    ThermalConductivity = _projectData!.ThirdFloorAreaThermalConductivity
                 });
             }
             if (secondArea.Area > 0)
@@ -391,7 +391,7 @@ public class Adapter
                 {
                     FloorAreaNumber = FloorAreaNumber.Second,
                     Area = Math.Round(secondArea.Intersection(spacePolygon).Area/1000000 - floor.FloorAreas.Sum(x => x.Area), 2),
-                    ThermalConductivity = _projectData.SecondFloorAreaThermalConductivity
+                    ThermalConductivity = _projectData!.SecondFloorAreaThermalConductivity
                 });
             }
             if (firstArea.Area > 0)
@@ -400,7 +400,7 @@ public class Adapter
                 {
                     FloorAreaNumber = FloorAreaNumber.First,
                     Area = Math.Round(firstArea.Intersection(spacePolygon).Area/1000000 - floor.FloorAreas.Sum(x => x.Area), 2),
-                    ThermalConductivity = _projectData.FirstFloorAreaThermalConductivity
+                    ThermalConductivity = _projectData!.FirstFloorAreaThermalConductivity
                 });
             }
             space.Floor = floor;
@@ -411,9 +411,9 @@ public class Adapter
     {
         var spacesByBottom = _spaceDtos.GroupBy(x => x.BottomLevel).ToDictionary(x => x.Key, x => x.ToList());
         var spacesByTop = _spaceDtos.GroupBy(x => x.BottomLevel + x.Height).ToDictionary(x => x.Key, x => x.ToList());
-        var slabs = nanocadGrids.Single().AxisZ.Points
+        var slabs = _nanocadGrids.Single().AxisZ.Points
             .OrderBy(x => x.Position)
-            .ToDictionary(g => g.Position, g => nanocadSlabs.Where(x => Math.Abs(x.BasePoint.Z - g.Position) < 1).ToArray());
+            .ToDictionary(g => g.Position, g => _nanocadSlabs.Where(x => Math.Abs(x.BasePoint.Z - g.Position) < 1).ToArray());
 
         foreach (var currentSpace in _spaceDtos)
         {
@@ -487,7 +487,7 @@ public class Adapter
     {
         return new Building
         {
-            OutsideTemperature = _projectData.OutsideTemperature,
+            OutsideTemperature = _projectData!.OutsideTemperature,
             Spaces = _spaceDtos.Select(x => x.ToSpace()).ToList()
         };
     }
@@ -581,8 +581,7 @@ public class Adapter
     private void InitProjectData()
     {
         // Ищем или создаем ProjectData на чертеже
-        ParametricEntity? projectData;
-        projectData = GetProjectData();
+        var projectData = GetProjectData();
         if (projectData == null)
         {
             CreateProjectData();
@@ -610,8 +609,8 @@ public class Adapter
         var materialLibrary = ProjectMaterialLibrary.Current;
 
         var surfaces = new List<StructuralSurface>();
-        surfaces.AddRange(nanocadSlabs);
-        surfaces.AddRange(nanocadWalls);
+        surfaces.AddRange(_nanocadSlabs);
+        surfaces.AddRange(_nanocadWalls);
         
         foreach (var surface in surfaces)
         {
