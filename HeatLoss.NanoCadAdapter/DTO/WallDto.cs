@@ -1,5 +1,4 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.NanoCadAdapter.Utils;
 using HeatLoss.Domain.Enums;
 using HeatLoss.Domain.Surfaces;
 using NetTopologySuite.Geometries;
