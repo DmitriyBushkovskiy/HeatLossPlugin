@@ -1,6 +1,6 @@
 ﻿using BIMStructureMgd.ObjectProperties;
 
-namespace HeatLoss.BimAdapters.Extensions;
+namespace HeatLoss.NanoCadAdapter.Extensions;
 
 public static class BuildMaterialExtensions
 {

@@ -1,10 +1,10 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.BimAdapters.Utils;
+using HeatLoss.NanoCadAdapter.Utils;
 using HeatLoss.Domain.Enums;
 using HeatLoss.Domain.Surfaces;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.BimAdapters.DTO;
+namespace HeatLoss.NanoCadAdapter.DTO;
 
 public class WallDto
 {

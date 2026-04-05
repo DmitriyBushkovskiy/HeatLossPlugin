@@ -2,13 +2,12 @@
 using BIMStructureMgd.Common;
 using BIMStructureMgd.DatabaseObjects;
 using BIMStructureMgd.ObjectProperties;
-using HeatLoss.BimAdapters.DTO;
-using HeatLoss.BimAdapters.Extensions;
-using HeatLoss.BimAdapters.Objects;
-using HeatLoss.BimAdapters.Utils;
+using HeatLoss.NanoCadAdapter.Extensions;
 using HeatLoss.Domain.Enums;
 using HeatLoss.Domain.Surfaces;
 using HeatLoss.Geometry;
+using HeatLoss.NanoCadAdapter.DTO;
+using HeatLoss.NanoCadAdapter.Objects;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;
 using NetTopologySuite.Geometries;
@@ -24,9 +23,9 @@ using Teigha.Runtime;
 using Exception = System.Exception;
 using Utilities = BIMStructureMgd.Common.Utilities;
 
-namespace HeatLoss.BimAdapters;
+namespace HeatLoss.NanoCadAdapter;
 
-public class NanoCadAdapter
+public class Adapter
 {
     private List<SpaceEntity> nanocadSpaces;
     private List<LinearBuildingWall> nanocadWalls;
@@ -44,7 +43,7 @@ public class NanoCadAdapter
     private ProjectDataDto _projectData;
     private readonly List<SpaceDto> _spaceDtos = new();
     
-    public NanoCadAdapter()
+    public Adapter()
     {
         document = Application.DocumentManager.MdiActiveDocument;
         editor = document.Editor;

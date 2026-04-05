@@ -1,6 +1,6 @@
 ﻿using HeatLoss.Domain.Surfaces;
 
-namespace HeatLoss.BimAdapters.DTO;
+namespace HeatLoss.NanoCadAdapter.DTO;
 
 public class FloorDto
 {

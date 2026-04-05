@@ -1,6 +1,6 @@
 ﻿using HeatLoss.Domain.Enums;
 
-namespace HeatLoss.BimAdapters.DTO;
+namespace HeatLoss.NanoCadAdapter.DTO;
 
 public class FloorAreaDto
 {

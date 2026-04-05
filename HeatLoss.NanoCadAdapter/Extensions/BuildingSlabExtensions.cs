@@ -2,7 +2,7 @@
 using HeatLoss.Geometry.Extensions;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.BimAdapters.Extensions;
+namespace HeatLoss.NanoCadAdapter.Extensions;
 
 public static class BuildingSlabExtensions
 {

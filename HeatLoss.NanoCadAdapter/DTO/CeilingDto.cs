@@ -1,9 +1,9 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.BimAdapters.Extensions;
+using HeatLoss.NanoCadAdapter.Extensions;
 using HeatLoss.Domain.Enums;
 using HeatLoss.Domain.Surfaces;
 
-namespace HeatLoss.BimAdapters.DTO;
+namespace HeatLoss.NanoCadAdapter.DTO;
 
 public class CeilingDto
 {

@@ -1,10 +1,10 @@
 ﻿using System.Globalization;
 using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.BimAdapters.DTO;
 using HeatLoss.Geometry.Extensions;
+using HeatLoss.NanoCadAdapter.DTO;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.BimAdapters.Extensions;
+namespace HeatLoss.NanoCadAdapter.Extensions;
 
 public static class SpaceEntityExtensions
 {

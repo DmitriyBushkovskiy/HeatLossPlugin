@@ -1,10 +1,10 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.BimAdapters.Enums;
 using HeatLoss.Geometry;
 using HeatLoss.Geometry.Extensions;
+using HeatLoss.NanoCadAdapter.Enums;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.BimAdapters.Extensions;
+namespace HeatLoss.NanoCadAdapter.Extensions;
 
 public static class BuildingOpeningExtensions
 {

@@ -1,6 +1,6 @@
 ﻿using Teigha.DatabaseServices;
 
-namespace HeatLoss.BimAdapters.Extensions;
+namespace HeatLoss.NanoCadAdapter.Extensions;
 
 public static class ObjectIdExtensions
 {
