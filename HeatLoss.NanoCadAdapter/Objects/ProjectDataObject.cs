@@ -21,7 +21,7 @@ public class ProjectDataObject : EntitySource<ProjectDataSpecification>
         public ProjectDataSpecification() 
         {
             Name = "ProjectData";
-            Temperature = 0;
+            Temperature = 100;
             FloorAreaOneThermalConductivity = 2.1;
             FloorAreaTwoThermalConductivity = 4.3;
             FloorAreaThreeThermalConductivity = 8.6;
