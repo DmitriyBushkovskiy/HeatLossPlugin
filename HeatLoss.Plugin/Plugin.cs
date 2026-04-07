@@ -1,7 +1,9 @@
-﻿using HeatLoss.BimAdapters;
-using HeatLoss.Domain.Calculation;
+﻿using HeatLoss.Calculations;
+using HeatLoss.NanoCadAdapter;
 using HeatLoss.Domain.Enums;
-using HeatLoss.Utils;
+using HeatLoss.Domain.Results;
+using HeatLoss.Domain.Surfaces;
+using HeatLoss.Reports;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;
 using Teigha.Runtime;
@@ -10,9 +12,11 @@ namespace HeatLoss.Plugin;
 
 public class Plugin
 {
+    private readonly Document _document;
+    private readonly Editor _editor;
+    
     private Building? _building;
-    private Document _document;
-    private Editor _editor;
+    private BuildingHeatLossResult? _buildingHeatLossResult;
 
     public Plugin()
     {
@@ -24,9 +28,8 @@ public class Plugin
     [CommandMethod("HL_GET_BUILDING_DATA")]
     public void Foo_GetBuildingData()
     {
-        var na = new NanoCadAdapter();
-        _building = na.InitBuildingInfo();
-        var rr = 1;
+        var na = new Adapter();
+        _building = na.GetBuildingInfo();
     }
     
     //Метод Template1 реализует команду Command1
@@ -39,8 +42,43 @@ public class Plugin
             return;
         }
 
-        var calculator = new Calculator();
-        var result = calculator.Calculate(_building);
+        var calculator = new HeatLossCalculator();
+        _buildingHeatLossResult = calculator.Calculate(_building);
+    }
+    
+    [CommandMethod("HL_GENERATE_REPORT")]
+    public void Foo_GenerateReport()
+    {
+        if (_buildingHeatLossResult == null)
+        {
+            _editor.WriteMessage("No building heat loss results found");
+            return;
+        }
+
+        var reportGenerator = new ReportGenerator(
+            new ReportGeneratorOptions
+            {
+                LengthMeasurementUnit = LengthMeasurementUnit.Meter
+            });
+        reportGenerator.GenerateReport(_buildingHeatLossResult);
+    }
+    
+    [CommandMethod("Foo_Bar")]
+    public void Foo_Bar()
+    {
+        var na = new Adapter();
+        _building = na.GetBuildingInfo();
+        
+        var calculator = new HeatLossCalculator();
+        _buildingHeatLossResult = calculator.Calculate(_building);
+
+        var options = new ReportGeneratorOptions
+        {
+            LengthMeasurementUnit = LengthMeasurementUnit.Meter
+        };
+        
+        var reportGenerator = new ReportGenerator(options);
+        reportGenerator.GenerateReport(_buildingHeatLossResult);
     }
     
     [CommandMethod("HL_Print_building_data")]
@@ -59,7 +97,7 @@ public class Plugin
             foreach (var wall in space.Walls)
             {
                 _editor.WriteMessage($"--{(wall.Position == SurfacePosition.Inside ? "Внутренняя" : "Наружная")} стена{(wall.Position == SurfacePosition.Inside ? wall.AdjacentSpaceNumber : "")} К:{wall.ThermalConductivity}");
-                if (wall.Openings.Count > 0)
+                if (wall.Openings.Any())
                 {
                     foreach (var opening in wall.Openings)
                     {

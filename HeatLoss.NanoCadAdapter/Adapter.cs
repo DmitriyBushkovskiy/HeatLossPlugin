@@ -50,7 +50,7 @@ public class Adapter
         _geometry = new HeatLossGeometry();
     }
 
-    public Building InitBuildingInfo()
+    public Building GetBuildingInfo()
     {
         _nanocadSpaces = FindObjects<SpaceEntity>().ToList();
         _nanocadWalls = FindObjects<LinearBuildingWall>().ToList();
@@ -61,20 +61,6 @@ public class Adapter
         InitProjectData();
         
         CreateSpaces();
-        
-        // validate
-        foreach (var space in _spaceDtos)
-        {
-            var eww = space.Edges.Where(e => e.ModelWall == null);
-            if (eww.Count() > 0)
-            {
-                _editor.WriteMessage($"----- Room: {space.Number}. {eww.Count()} edges without wall");
-                foreach (var e in eww)
-                {
-                    Print(new []{new Line(new Point3d(e.Start.X, e.Start.Y, space.BottomLevel), new Point3d(e.End.X, e.End.Y, space.BottomLevel))}, Color.FromRgb(255, 0, 0));
-                }
-            }
-        }
         
         MoveSpaceInsideEdges();
 
