@@ -42,12 +42,15 @@ public class Adapter
 
     private ProjectDataDto? _projectData;
     private readonly List<SpaceDto> _spaceDtos = new();
+
+    private readonly Validator _validator;
     
     public Adapter()
     {
         _document = Application.DocumentManager.MdiActiveDocument;
         _editor = _document.Editor;
         _geometry = new HeatLossGeometry();
+        _validator = new Validator(_document);
     }
 
     public Building GetBuildingInfo()
@@ -214,6 +217,7 @@ public class Adapter
             }
             _spaceDtos.Add(spaceDto);
         }
+        _validator.ValidateSpaces(_spaceDtos);
     }
 
     /// <summary>
@@ -538,7 +542,7 @@ public class Adapter
         }
     }
     
-    private static IEnumerable<T> FindObjects<T>() where T: Entity
+    private IEnumerable<T> FindObjects<T>() where T: Entity
     {
         var document = Application.DocumentManager.MdiActiveDocument;
         var editor = document.Editor;
@@ -566,6 +570,12 @@ public class Adapter
 
     private void InitProjectData()
     {
+        _validator.CollectionIsNotEmpty(_nanocadSpaces);
+        _validator.CollectionIsNotEmpty(_nanocadWalls);
+        _validator.CollectionIsNotEmpty(_nanocadOpenings);
+        _validator.CollectionIsNotEmpty(_nanocadSlabs);
+        _validator.CollectionIsNotEmpty(_nanocadGrids);
+        
         // Ищем или создаем ProjectData на чертеже
         var projectData = GetProjectData();
         if (projectData == null)
@@ -582,6 +592,8 @@ public class Adapter
             ThirdFloorAreaThermalConductivity = double.Parse(projectData!.GetParameter("HL_FLOOR_AREA3_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
             FourthFloorAreaThermalConductivity = double.Parse(projectData!.GetParameter("HL_FLOOR_AREA4_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
         };
+        
+        _validator.ValidateProjectData(_projectData);
 
         // определяем положение сторон света
         _cardinalDirections = new Dictionary<CardinalDirection, Vector2D>();
@@ -608,6 +620,8 @@ public class Adapter
                 _materialsThermalConductivity[materialId] = double.TryParse(thermalConductivity, NumberStyles.Any , CultureInfo.InvariantCulture, out var result) ? result : 0.0 ;
             }
         }
+        
+        _validator.ValidateMaterials(_materialsThermalConductivity);
     }
 
     private static void CreateProjectData()
