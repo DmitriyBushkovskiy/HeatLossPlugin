@@ -1,14 +1,15 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
 using HeatLoss.Domain.Enums;
+using HeatLoss.Geometry;
 using HeatLoss.NanoCadAdapter.DTO;
 using HeatLoss.NanoCadAdapter.Exceptions;
+using HeatLoss.NanoCadAdapter.Extensions;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;
 using NetTopologySuite.Geometries;
 using Teigha.Colors;
 using Teigha.DatabaseServices;
 using Teigha.Geometry;
-using Teigha.GraphicsInterface;
 
 namespace HeatLoss.NanoCadAdapter;
 
@@ -19,11 +20,13 @@ public class Validator
     
     private readonly Document _document;
     private readonly Editor _editor;
+    private readonly HeatLossGeometry _geometry;
     
     public Validator(Document document)
     {
         _document = document;
         _editor = _document.Editor;
+        _geometry = new HeatLossGeometry();
         CreateLayer(LayerName);
         // DeleteLayerObjects();
     }
@@ -66,52 +69,59 @@ public class Validator
     
     public void ValidateSpaces(IEnumerable<SpaceDto> spaces)
     {
-        _editor.WriteMessage("ValidateSpaces");
-        Print(new []
+        var errorLines = new List<Line>();
+        var isCorrect = true;
+        foreach (var space in spaces)
         {
-            new Line
+            var edgesWithoutWall = space.Edges.Where(e => e.ModelWall == null).ToList();
+            if (edgesWithoutWall.Any())
             {
-                StartPoint = new Point3d(0, 0, 0),
-                EndPoint = new Point3d(5000, 4000, 0),
-                Layer = "HL_VALIDATION"
+                if (isCorrect)
+                {
+                    _editor.WriteMessage("Найдены помещения, у которых границы не соприкасаются со стеной:");
+                    isCorrect = false;
+                }
+                _editor.WriteMessage($"Пом. {space.Number} {space.Name}. Границ помещения без стен: {edgesWithoutWall.Count}");
+                foreach (var edge in edgesWithoutWall)
+                {
+                    errorLines.Add(
+                        new Line
+                        {
+                            StartPoint = new Point3d(edge.Start.X, edge.Start.Y, space.BottomLevel),
+                            EndPoint = new Point3d(edge.End.X, edge.End.Y, space.BottomLevel),
+                            Layer = LayerName
+                        }
+                    );
+                }
             }
-        });
-        // var errorLines = new List<Line>();
-        // var isCorrect = true;
-        // foreach (var space in spaces)
-        // {
-        //     var edgesWithoutWall = space.Edges.Where(e => e.ModelWall == null).ToList();
-        //     if (edgesWithoutWall.Any())
-        //     {
-        //         if (isCorrect)
-        //         {
-        //             _editor.WriteMessage("Найдены помещения, у которых границы не соприкасаются со стеной:");
-        //             isCorrect = false;
-        //         }
-        //         _editor.WriteMessage($"Пом. {space.Number} {space.Name}. Границ помещения без стен: {edgesWithoutWall.Count}");
-        //         foreach (var edge in edgesWithoutWall)
-        //         {
-        //             errorLines.Add(
-        //                 new Line
-        //                 {
-        //                     StartPoint = new Point3d(edge.Start.X, edge.Start.Y, space.BottomLevel),
-        //                     EndPoint = new Point3d(edge.End.X, edge.End.Y, space.BottomLevel),
-        //                     Layer = LayerName
-        //                 }
-        //             );
-        //         }
-        //     }
-        // }
-        // if(errorLines.Any())
-        //     Print(errorLines);
-        //
-        // if (!isCorrect)
-        // {
-        //     //throw new ValidationException("Каждая сторона помещения должна контактировать со стеной");
-        // }
+        }
+        if(errorLines.Any())
+            Print(errorLines);
+        
+        if (!isCorrect)
+        {
+            throw new ValidationException("Стороны помещения, которые не контактируют со стенами выделены красным");
+        }
     }
 
-    public void ValidateWallsTypesAndPositions(List<SpaceDto> spaces, Polygon perimeter, double level)
+    public void ValidateWalls(List<CoordinateGridRef> grids,  List<SpaceDto> spaces)
+    {
+        var levels = grids.Single().AxisZ.Points.OrderBy(x => x.Position).ToList();
+        for (int i = 0; i < levels.Count - 1; i++)
+        {
+            var floor = levels[i];
+            var floorSpaces = spaces.Where(x => Math.Abs(x.BottomLevel - floor.Position) < 1 
+                                                || (x.BottomLevel + x.Height > floor.Position && x.BottomLevel + x.Height <= levels[i+1].Position ))
+                .ToList();
+            
+            if (floorSpaces.Count == 0)
+                continue;
+            var perimeter = _geometry.GetCommonPerimeters(floorSpaces.Select(x => x.GetPolygon()), 1000).Single();
+            ValidateWallsTypesAndPositions(floorSpaces, perimeter, floor.Position);
+        }
+    }
+
+    private void ValidateWallsTypesAndPositions(List<SpaceDto> spaces, Polygon perimeter, double level)
     {
         var isCorrect = true;
         
@@ -119,18 +129,30 @@ public class Validator
         {
             foreach (var edge in space.Edges)
             {
+                if (!edge.Walls.Any())
+                {
+                    isCorrect = false;
+                    // Для наружных стен здания стоит свойство, что они внутренние
+                    var line = edge.LineString.ToLine(double.IsNaN(edge.Start.Z) ? 0 : edge.Start.Z);
+                    line.Layer = LayerName;
+                    Print(new []{line});
+                }
                 foreach (var wall in edge.Walls)
                 {
-                    if ((wall.Position == SurfacePosition.Outside && perimeter.Contains(wall.Polygon)) ||
-                        (wall.Position == SurfacePosition.Inside && !perimeter.Contains(wall.Polygon)))
+                    // Для внутренних стен здания стоит свойство, что они наружные
+                    if (wall.Position == SurfacePosition.Outside && perimeter.Contains(wall.Polygon))
                     {
                         PrintPolygons(new []{wall.Polygon}, level: wall.BottomLevel);
                     }
                 }
             }
         }
+
         if (!isCorrect)
+        {
             PrintPolygons(new []{perimeter}, color: Color.FromRgb(0, 0, 255), level: level);
+            _editor.WriteMessage("\nНайдены стены с неверными настройками расположения (внутрення/наружная)\nКрасным показаны стены или стороны помещения, синим - внешний периметр этажа");
+        }
     }
 
     private void CreateLayer(string layerName)
@@ -180,10 +202,10 @@ public class Validator
     //     tr.Commit();
     // }
     
-    public void Print(IEnumerable<Entity> geometries)
+    private void Print(IEnumerable<Entity> geometries)
     {
-        _editor.WriteMessage("Print");
-        var db = _document.Database;
+        var document = Application.DocumentManager.MdiActiveDocument;
+        var db = document.Database;
         var tr = db.TransactionManager.StartTransaction();
         
         var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);

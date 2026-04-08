@@ -75,100 +75,9 @@ public class Adapter
 
         CreateCeilings();
         
-        // далее удалить
- 
-        // var orderedSpaces = _spaceDtos.OrderBy(x => x.Number).ToList();
-        // for (int i = 0; i < orderedSpaces.Count; i++)
-        // {
-        //     var s = orderedSpaces[i];
-        //     var color = Color.FromColorIndex(ColorMethod.ByAci, (short)i);
-        //     PrintPolygons(new []{ s.GetPolygon()}, color, s.BottomLevel);
-        //     editor.WriteMessage($"Помещение {s.Number} {s.Name} T: {s.Temperature}");
-        //     var walls = s.Edges.SelectMany(x => x.Walls).OrderBy(x => x.AdjacentSpace?.Number).ToList();
-        //     
-        //     // стены и проемы
-        //     editor.WriteMessage("-Стены и проемы:");
-        //     foreach (var wall in walls)
-        //     {
-        //         // editor.WriteMessage($"--- {wall.Position} W:{wall.Width} H:{wall.Height} Z:{wall.BottomLevel} К:{wall.ThermalConductivity}" + (wall.Position == SurfacePosition.Inside ? $" пом: {wall.AdjacentSpace!.Number}" : string.Empty));
-        //         foreach (var opening in wall.Openings)
-        //         {
-        //             editor.WriteMessage($"------ {opening.Type} {opening.Name} W:{opening.Width}, H:{opening.Height} Z:{opening.BottomLevel} K:{opening.ThermalConductivity}");
-        //         }
-        //     }
-        //     
-        //     // перекрытия
-        //     // editor.WriteMessage("-Перекрытия:");
-        //     // foreach (var ceiling in s.Ceiling)
-        //     // {
-        //     //     editor.WriteMessage($"--- {(ceiling.Position == SurfacePosition.Inside ? ceiling.Space!.Number : "Внешнее перекрытие")} S:{ceiling.Area} K:{ceiling.ThermalConductivity}");
-        //     // }
-        //     // PrintPolygons(walls.Select(x => x.Polygon).ToList(), color, s.BottomLevel);
-        //     // PrintPolygons(walls.SelectMany(x => x.Openings).Select(x => x.Polygon).ToList(), color, s.BottomLevel);
-        // }
-        //
-        // зоны помещений первого этажа
-        // var fistFloor = nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).First(); //TODO: что если несколько сеток осей?
-        // var firstFloorSpaces = _spaceDtos.Where(x => Math.Abs(x.BottomLevel - fistFloor.Position) < 1).OrderBy(x => x.Number).ToList();
-        // foreach (var s in firstFloorSpaces)
-        // {
-        //     editor.WriteMessage($"--- {s.Number} 1:{s.Floor.FirstFloorAreaArea} 2:{s.Floor.SecondFloorAreaArea}, 3:{s.Floor.ThirdFloorAreaArea} 4:{s.Floor.FourthFloorAreaArea}");
-        // }
-        //
-        // PrintPolygons(firstFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 1), 0);
-        // PrintPolygons(secondFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 2), 0);
-        // PrintPolygons(thirdFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 3), 0);
-        // PrintPolygons(fourthFloorGeometry, Color.FromColorIndex(ColorMethod.ByAci, 4), 0);
-        
-
-        
         _editor.WriteMessage($"!!!! Finished !!!!!");
 
         return GetBuilding();
-    }
-    
-    private void Print(IEnumerable<Drawable> geometries, Color color)
-    {
-        var curDoc = Application.DocumentManager.MdiActiveDocument;
-        var db = curDoc.Database;
-        var tr = db.TransactionManager.StartTransaction();
-        
-        var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-        var btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-
-        foreach (var geometry in geometries)
-        {
-            switch (geometry)
-            {
-                case Line line:
-                    line.Color =  color;
-                    line.LineWeight = LineWeight.LineWeight050;
-                    btr.AppendEntity(line);
-                    tr.AddNewlyCreatedDBObject(line, true);
-                    break;
-
-                default:
-                    throw new Exception();
-            }
-        }
-        
-        tr.Commit();
-    }
-
-    private void PrintPolygons(IEnumerable<Polygon> polygons, Color color, double level = 7000)
-    {
-        var buildingPerimeterCoordinates = polygons.Select(x => x.ExteriorRing.Coordinates);
-        var lines = new List<Line>();
-        foreach (var resCoordinates in buildingPerimeterCoordinates)
-        {
-            for (int i = 0; i < resCoordinates.Length - 1; i++)
-            {
-                var currPoint = resCoordinates[i];
-                var nextPoint = resCoordinates[i + 1];
-                lines.Add(new Line(new Point3d(currPoint.X, currPoint.Y, level), new Point3d(nextPoint.X, nextPoint.Y, level)));
-            }
-        }
-        Print(lines, color);
     }
 
     private void  CreateSpaces()
@@ -280,8 +189,6 @@ public class Adapter
                                         ThermalConductivity = _materialsThermalConductivity[modelWall.GetParameter(Parameter.Names.BuildMaterialId)]
                                     };
                                     edge.Walls.Add(wall);
-                                    // w.BelongToSpaces.Add(space);
-                                    // Print(new []{ new Line() }, CustomColors.Red);
                                 }
                             }
                         }
@@ -291,6 +198,8 @@ public class Adapter
                     throw new NotImplementedException(); // TODO: remove?
             }
         }
+        
+        _validator.ValidateWalls(_nanocadGrids, _spaceDtos);
         
         double GetWallThickness(LinearBuildingWall wall)
         {
