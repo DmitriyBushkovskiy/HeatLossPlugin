@@ -106,6 +106,7 @@ public class Validator
 
     public void ValidateWalls(List<CoordinateGridRef> grids,  List<SpaceDto> spaces)
     {
+        var isCorrect = true;
         var levels = grids.Single().AxisZ.Points.OrderBy(x => x.Position).ToList();
         for (int i = 0; i < levels.Count - 1; i++)
         {
@@ -117,11 +118,37 @@ public class Validator
             if (floorSpaces.Count == 0)
                 continue;
             var perimeter = _geometry.GetCommonPerimeters(floorSpaces.Select(x => x.GetPolygon()), 1000).Single();
-            ValidateWallsTypesAndPositions(floorSpaces, perimeter, floor.Position);
+            isCorrect = isCorrect && ValidateWallsTypesAndPositions(floorSpaces, perimeter, floor.Position);
         }
+        if (!isCorrect)
+            throw new ValidationException("Ошибка при проверке стен");
     }
 
-    private void ValidateWallsTypesAndPositions(List<SpaceDto> spaces, Polygon perimeter, double level)
+    public void ValidateOpenings(List<OpeningDto> openings)
+    {
+        var invalidOpenings = new List<OpeningDto>();
+        foreach (var opening in openings)
+        {
+            if (opening.ThermalConductivity <= 0)
+            {
+                invalidOpenings.Add(opening);
+            }
+        }
+
+        if (invalidOpenings.Any())
+        {
+            _editor.WriteMessage("Найдены проемы с некорректным коэффициентом теплопроводности. Проемы выделены красным");
+            foreach (var group in invalidOpenings.GroupBy(x => x.BottomLevel))
+            {
+                PrintPolygons(group.ToList().Select(x => x.Polygon).ToList(), level: group.Key);
+            }
+        }
+
+        if (invalidOpenings.Any())
+            throw new ValidationException("Ошибка при проверке проемов");
+    }
+
+    private bool ValidateWallsTypesAndPositions(List<SpaceDto> spaces, Polygon perimeter, double level)
     {
         var isCorrect = true;
         
@@ -153,6 +180,8 @@ public class Validator
             PrintPolygons(new []{perimeter}, color: Color.FromRgb(0, 0, 255), level: level);
             _editor.WriteMessage("\nНайдены стены с неверными настройками расположения (внутрення/наружная)\nКрасным показаны стены или стороны помещения, синим - внешний периметр этажа");
         }
+
+        return isCorrect;
     }
 
     private void CreateLayer(string layerName)

@@ -15,12 +15,8 @@ using NetTopologySuite.Mathematics;
 using NetTopologySuite.Operation.Union;
 using ParametricKit.Tree;
 using ParametricKit.Tree.Eval;
-using Teigha.Colors;
 using Teigha.DatabaseServices;
-using Teigha.Geometry;
-using Teigha.GraphicsInterface;
 using Teigha.Runtime;
-using Exception = System.Exception;
 using Utilities = BIMStructureMgd.Common.Utilities;
 
 namespace HeatLoss.NanoCadAdapter;
@@ -246,6 +242,8 @@ public class Adapter
                 }
             }
         }
+
+        _validator.ValidateOpenings(_spaceDtos.SelectMany(x => x.Edges).SelectMany(x => x.Walls).SelectMany(x => x.Openings).ToList());
     }
 
     private void CreateFloorAreas()
@@ -421,11 +419,10 @@ public class Adapter
     /// <summary>
     /// Сдвиг внутренних граней помещения до середины внутренней стены
     /// </summary>
-    private void MoveSpaceInsideEdges() //TODO: перенести это в геометрию
+    private void MoveSpaceInsideEdges()
     {
         foreach (var space in _spaceDtos)
         {
-            // GeometryFactory factory = new GeometryFactory(); //TODO: использовать factory?
             var spaceEdges = space.Edges;
             for (int i = 0; i < spaceEdges.Count; i++)
             {
@@ -505,8 +502,10 @@ public class Adapter
         _validator.ValidateProjectData(_projectData);
 
         // определяем положение сторон света
-        _cardinalDirections = new Dictionary<CardinalDirection, Vector2D>();
-        _cardinalDirections[CardinalDirection.N] = new Vector2D(new Coordinate(projectData!.YDir.X, projectData!.YDir.Y));
+        _cardinalDirections = new Dictionary<CardinalDirection, Vector2D>
+        {
+            [CardinalDirection.N] = new (new Coordinate(projectData!.YDir.X, projectData.YDir.Y))
+        };
         for (int i = 1; i < 8; i++)
         {
             _cardinalDirections[(CardinalDirection)i] = _cardinalDirections[(CardinalDirection)(i - 1)].Rotate(- Math.PI / 4);
