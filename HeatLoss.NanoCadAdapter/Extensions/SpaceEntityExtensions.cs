@@ -43,6 +43,7 @@ public static class SpaceEntityExtensions
                 : 0,
         };
     }
+    //TODO: параметр HL_SPACE_TEMPERATURE добавляется к помещениям вручную
     
     public static string GetParameter(this SpaceEntity space, string parameterName)
         => space.GetElementData().Parameters.FirstOrDefault(x => x.Name == parameterName)?.Value ?? string.Empty;

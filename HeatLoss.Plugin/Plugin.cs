@@ -71,6 +71,8 @@ public class Plugin
         
         var calculator = new HeatLossCalculator();
         _buildingHeatLossResult = calculator.Calculate(_building);
+        
+        na.SetHeatLossToSpaces(_buildingHeatLossResult);
 
         var options = new ReportGeneratorOptions
         {

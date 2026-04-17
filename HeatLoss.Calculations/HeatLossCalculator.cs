@@ -90,7 +90,7 @@ public class HeatLossCalculator
         return buildingHeatLossResult;
     }
 
-    public List<SurfaceHeatLossResult> CalculateWall(Wall wall, double temperatureDifference)
+    private List<SurfaceHeatLossResult> CalculateWall(Wall wall, double temperatureDifference)
     {
         var result = wall.Openings.Select(x => CalculateOpening(x, temperatureDifference)).ToList();
         var wallArea = Math.Round((wall.Width * wall.Height - wall.Openings.Sum(x => x.Height * x.Width))/1_000_000, 2);

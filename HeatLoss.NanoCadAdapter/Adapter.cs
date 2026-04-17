@@ -4,6 +4,7 @@ using BIMStructureMgd.DatabaseObjects;
 using BIMStructureMgd.ObjectProperties;
 using HeatLoss.NanoCadAdapter.Extensions;
 using HeatLoss.Domain.Enums;
+using HeatLoss.Domain.Results;
 using HeatLoss.Domain.Surfaces;
 using HeatLoss.Geometry;
 using HeatLoss.NanoCadAdapter.DTO;
@@ -74,6 +75,37 @@ public class Adapter
         _editor.WriteMessage($"!!!! Finished !!!!!");
 
         return GetBuilding();
+    }
+
+    public void SetHeatLossToSpaces(BuildingHeatLossResult heatLossResult)
+    {
+        var db = _document.Database;
+        
+        var tr = db.TransactionManager.StartTransaction();
+        var filter = new SelectionFilter(new[] {
+            new TypedValue((int)DxfCode.Start, RXObject.GetClass(typeof(SpaceEntity)).DxfName)
+        });
+        var promptResult = _editor.SelectAll(filter);
+        
+        var selectionSet = promptResult.Status == PromptStatus.OK ? promptResult.Value : null;
+        
+        if (selectionSet == null || selectionSet.Count < 1)
+            selectionSet = new SelectionSet();
+        
+        foreach (SelectedObject selectedObject in selectionSet)
+        {
+            var dbObject = tr.GetObject(selectedObject.ObjectId, OpenMode.ForWrite);
+            if (dbObject is SpaceEntity res)
+            {
+                var spaceHeatLossResult = heatLossResult.Spaces.FirstOrDefault(x => x.Number == res.Number && x.Name == res.Name);
+                if (spaceHeatLossResult != null)
+                {
+                    res.GetElementData().SetParameter("HL_HEAT_LOSS", spaceHeatLossResult.TotalHeatLoss);
+                    //TODO: параметр HL_HEAT_LOSS добавляется к помещениям вручную
+                }
+            }
+        }
+        tr.Commit();
     }
 
     private void  CreateSpaces()
@@ -450,15 +482,13 @@ public class Adapter
     
     private IEnumerable<T> FindObjects<T>() where T: Entity
     {
-        var document = Application.DocumentManager.MdiActiveDocument;
-        var editor = document.Editor;
-        var db = document.Database;
+        var db = _document.Database;
 
         var tr = db.TransactionManager.StartTransaction();
         var filter = new SelectionFilter(new[] {
             new TypedValue((int)DxfCode.Start, RXObject.GetClass(typeof(T)).DxfName)
         });
-        var promptResult = editor.SelectAll(filter);
+        var promptResult = _editor.SelectAll(filter);
 
         var selectionSet = promptResult.Status == PromptStatus.OK ? promptResult.Value : null;
 
@@ -532,10 +562,9 @@ public class Adapter
         _validator.ValidateMaterials(_materialsThermalConductivity);
     }
 
-    private static void CreateProjectData()
+    private void CreateProjectData()
     {
-        var document = Application.DocumentManager.MdiActiveDocument;
-        var db = document.Database;
+        var db = _document.Database;
     
         var tr = db.TransactionManager.StartTransaction();
 
@@ -554,11 +583,10 @@ public class Adapter
         tr.Commit();
     }
     
-    private static ParametricEntity? GetProjectData()
+    private ParametricEntity? GetProjectData()
     {
-        var document = Application.DocumentManager.MdiActiveDocument;
-        var editor = document.Editor;
-        var db = document.Database;
+        var editor = _document.Editor;
+        var db = _document.Database;
     
         var tr = db.TransactionManager.StartTransaction();
 
