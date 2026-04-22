@@ -24,23 +24,25 @@ namespace HeatLoss.NanoCadAdapter;
 
 public class Adapter
 {
-    private List<SpaceEntity> _nanocadSpaces = new();
-    private List<LinearBuildingWall> _nanocadWalls  = new();
-    private List<BuildingOpening> _nanocadOpenings = new();
-    private List<CoordinateGridRef> _nanocadGrids = new();
-    private List<BuildingSlab> _nanocadSlabs = new();
+    // private List<SpaceEntity> _nanocadSpaces = new();
+    // private List<LinearBuildingWall> _nanocadWalls  = new();
+    // private List<BuildingOpening> _nanocadOpenings = new();
+    // private List<CoordinateGridRef> _nanocadGrids = new();
+    // private List<BuildingSlab> _nanocadSlabs = new();
 
-    private readonly Dictionary<string, double> _materialsThermalConductivity = new ();
-    private Dictionary<CardinalDirection, Vector2D> _cardinalDirections = new ();
+    // private readonly Dictionary<string, double> _materialsThermalConductivity = new ();
+    // private Dictionary<CardinalDirection, Vector2D> _cardinalDirections = new ();
     
     private readonly Document _document;
     private readonly Editor _editor;
     private readonly HeatLossGeometry _geometry;
 
-    private ProjectDataDto? _projectData;
-    private readonly List<SpaceDto> _spaceDtos = new();
+    // private ProjectDataDto? _projectData;
+    // private List<SpaceDto> _spaceDtos = new();
 
     private readonly Validator _validator;
+    private readonly Extractor _extractor;
+    // private readonly DataTransformer _transformer;
     
     public Adapter()
     {
@@ -48,35 +50,143 @@ public class Adapter
         _editor = _document.Editor;
         _geometry = new HeatLossGeometry();
         _validator = new Validator(_document);
+        _extractor = new Extractor(_document, _validator);
+        
     }
 
     public Building GetBuildingInfo()
     {
-        _nanocadSpaces = FindObjects<SpaceEntity>().ToList();
-        _nanocadWalls = FindObjects<LinearBuildingWall>().ToList();
-        _nanocadOpenings = FindObjects<BuildingOpening>().ToList();
-        _nanocadGrids = FindObjects<CoordinateGridRef>().ToList();
-        _nanocadSlabs = FindObjects<BuildingSlab>().ToList();
+        var rawData = _extractor.InitProjectData();
         
-        InitProjectData();
+        var _transformer = new DataTransformer(
+            _validator,
+            _geometry);
+
+        var spaces = _transformer.Transform(rawData);
         
-        CreateSpaces();
-        
-        MoveSpaceInsideEdges();
-
-        CreateWalls();
-
-        CreateOpenings();
-
-        CreateFloorAreas();
-
-        CreateCeilings();
+        // _spaceDtos = _transformer.CreateSpaces(_nanocadSpaces, _nanocadWalls, _nanocadOpenings);
+        //
+        // _transformer.MoveSpaceInsideEdges(_spaceDtos);
+        //
+        // _transformer.CreateWalls(_spaceDtos);
+        //
+        // _transformer.CreateOpenings();
+        //
+        // _transformer.CreateFloorAreas();
+        //
+        // _transformer.CreateCeilings();
         
         _editor.WriteMessage($"!!!! Finished !!!!!");
 
-        return GetBuilding();
+        var builder = new ModelBuilder();
+
+        return builder.GetBuilding(rawData.ProjectData, spaces);
     }
 
+    public void SetHeatLossToSpaces(BuildingHeatLossResult heatLossResult)
+    {
+        _extractor.SetHeatLossToSpaces(heatLossResult);
+    }
+    
+
+
+
+
+
+}
+
+public class Extractor
+{
+    private readonly Document _document;
+    private readonly Editor _editor;
+    private readonly Validator _validator;
+    
+    public Extractor(Document document, Validator validator)
+    {
+        _document = document;
+        // _document = Application.DocumentManager.MdiActiveDocument;
+        _editor = _document.Editor;
+        _validator = validator;
+    }
+    
+    // public void ExtractData()
+    // {
+    //     _nanocadSpaces = FindObjects<SpaceEntity>().ToList();
+    //     _nanocadWalls = FindObjects<LinearBuildingWall>().ToList();
+    //     _nanocadOpenings = FindObjects<BuildingOpening>().ToList();
+    //     _nanocadGrids = FindObjects<CoordinateGridRef>().ToList();
+    //     _nanocadSlabs = FindObjects<BuildingSlab>().ToList();
+    // }
+    
+    public NanocadRawData InitProjectData()
+    {
+        var nanocadSpaces = FindObjects<SpaceEntity>().ToList();
+        var nanocadWalls = FindObjects<LinearBuildingWall>().ToList();
+        var nanocadOpenings = FindObjects<BuildingOpening>().ToList();
+        var nanocadGrids = FindObjects<CoordinateGridRef>().ToList();
+        var nanocadSlabs = FindObjects<BuildingSlab>().ToList();
+        
+        _validator.CollectionIsNotEmpty(nanocadSpaces);
+        _validator.CollectionIsNotEmpty(nanocadWalls);
+        _validator.CollectionIsNotEmpty(nanocadOpenings);
+        _validator.CollectionIsNotEmpty(nanocadSlabs);
+        _validator.CollectionIsNotEmpty(nanocadGrids);
+        
+        // Ищем или создаем ProjectData на чертеже
+        var nanocadProjectData = GetProjectData();
+        var projectData = new ProjectDataDto
+        {
+            OutsideTemperature = double.Parse(nanocadProjectData!.GetParameter("HL_OUTSIDE_TEMPERATURE"), NumberStyles.Any, CultureInfo.InvariantCulture),
+            FirstFloorAreaThermalConductivity = double.Parse(nanocadProjectData!.GetParameter("HL_FLOOR_AREA1_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
+            SecondFloorAreaThermalConductivity = double.Parse(nanocadProjectData!.GetParameter("HL_FLOOR_AREA2_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
+            ThirdFloorAreaThermalConductivity = double.Parse(nanocadProjectData!.GetParameter("HL_FLOOR_AREA3_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
+            FourthFloorAreaThermalConductivity = double.Parse(nanocadProjectData!.GetParameter("HL_FLOOR_AREA4_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
+        };
+        
+        _validator.ValidateProjectData(projectData);
+
+        // определяем положение сторон света
+        var cardinalDirections = new Dictionary<CardinalDirection, Vector2D>
+        {
+            [CardinalDirection.N] = new (new Coordinate(nanocadProjectData!.YDir.X, nanocadProjectData.YDir.Y))
+        };
+        for (int i = 1; i < 8; i++)
+        {
+            cardinalDirections[(CardinalDirection)i] = cardinalDirections[(CardinalDirection)(i - 1)].Rotate(- Math.PI / 4);
+        }
+        
+        // Ищем используемые в проекте материалы
+        var materialLibrary = ProjectMaterialLibrary.Current;
+
+        var surfaces = new List<StructuralSurface>();
+        surfaces.AddRange(nanocadSlabs);
+        surfaces.AddRange(nanocadWalls);
+        
+         var materialsThermalConductivity = new Dictionary<string, double>();
+        foreach (var surface in surfaces)
+        {
+            var materialId = surface.GetElementData().GetParameter(Parameter.Names.BuildMaterialId)?.Value;
+            if (materialId != null && !materialsThermalConductivity.ContainsKey(materialId))
+            {
+                var material = materialLibrary.GetMaterialById(materialId);
+                var thermalConductivity = material.GetParameter("BUILD_THERMAL_CONDUCTIVITY");
+                materialsThermalConductivity[materialId] = double.TryParse(thermalConductivity, NumberStyles.Any , CultureInfo.InvariantCulture, out var result) ? result : 0.0 ;
+            }
+        }
+        
+        _validator.ValidateMaterials(materialsThermalConductivity);
+
+        return new NanocadRawData(
+            nanocadSpaces, 
+            nanocadWalls,
+            nanocadOpenings,
+            nanocadGrids, 
+            nanocadSlabs, 
+            materialsThermalConductivity, 
+            cardinalDirections, 
+            projectData);
+    }
+    
     public void SetHeatLossToSpaces(BuildingHeatLossResult heatLossResult)
     {
         var db = _document.Database;
@@ -107,9 +217,148 @@ public class Adapter
         }
         tr.Commit();
     }
-
-    private void  CreateSpaces()
+    
+    private IEnumerable<T> FindObjects<T>() where T: Entity
     {
+        var db = _document.Database;
+
+        var tr = db.TransactionManager.StartTransaction();
+        var filter = new SelectionFilter(new[] {
+            new TypedValue((int)DxfCode.Start, RXObject.GetClass(typeof(T)).DxfName)
+        });
+        var promptResult = _editor.SelectAll(filter);
+
+        var selectionSet = promptResult.Status == PromptStatus.OK ? promptResult.Value : null;
+
+        if (selectionSet == null || selectionSet.Count < 1)
+            selectionSet = new SelectionSet();
+
+        foreach (SelectedObject selectedObject in selectionSet)
+        {
+            var dbObject = tr.GetObject(selectedObject.ObjectId, OpenMode.ForRead);
+            if (dbObject is T res)
+                yield return res;
+        }
+        tr.Commit();
+    }
+
+    private ParametricEntity GetProjectData()
+    {
+        var projectData = FindProjectData();
+        if (projectData != null)
+            return projectData;
+        CreateProjectData();
+        return FindProjectData()!;
+    }
+
+    private void CreateProjectData()
+    {
+        var db = _document.Database;
+    
+        var tr = db.TransactionManager.StartTransaction();
+
+        var projectData = new ProjectDataObject(new ProjectDataSpecification());
+        var collector = new Collector();
+        var tree = collector.Collect(projectData);
+        
+        var parametricEntityConverter = new TreeToParametricEntityConverter();
+        var box = parametricEntityConverter.Convert(tree);
+        
+        box.UpdateElements();
+        box.ReCalculateParametric(ViewMode.Plan2D);
+        
+        Utilities.AddEntityToDatabase(db, tr, box);
+        
+        tr.Commit();
+    }
+    
+    private ParametricEntity? FindProjectData()
+    {
+        var editor = _document.Editor;
+        var db = _document.Database;
+    
+        var tr = db.TransactionManager.StartTransaction();
+
+        var promptResult = editor.SelectAll();
+    
+        var selectionSet = promptResult.Status == PromptStatus.OK ? promptResult.Value : null;
+    
+        if (selectionSet == null || selectionSet.Count < 1)
+            selectionSet = new SelectionSet();
+
+        var result = new List<ParametricEntity>();
+        
+        foreach (SelectedObject selectedObject in selectionSet)
+        {
+            var dbObject = tr.GetObject(selectedObject.ObjectId, OpenMode.ForRead);
+            if (dbObject is ParametricEntity res && res.Name == "ProjectData")
+                result.Add(res);
+        }
+        
+        tr.Commit();
+        return result.FirstOrDefault();
+    }
+}
+
+public class DataTransformer
+{
+    private List<SpaceEntity> _nanocadSpaces;
+    private List<LinearBuildingWall> _nanocadWalls;
+    private List<BuildingOpening> _nanocadOpenings;
+    private List<CoordinateGridRef> _nanocadGrids;
+    private List<BuildingSlab> _nanocadSlabs;
+    private Dictionary<string, double> _materialsThermalConductivity;
+    private Dictionary<CardinalDirection, Vector2D> _cardinalDirections;
+    public ProjectDataDto _projectData;
+    private List<SpaceDto> _spaceDtos;
+    private readonly Validator _validator;
+    private readonly HeatLossGeometry _geometry;
+    
+    public DataTransformer(
+        Validator validator, 
+        HeatLossGeometry geometry)
+    {
+        // _nanocadSpaces = rawData.NanocadSpaces;
+        // _nanocadWalls = rawData.NanocadWalls;
+        // _nanocadOpenings = rawData.NanocadOpenings;
+        // _nanocadGrids = rawData.NanocadGrids;
+        // _nanocadSlabs = rawData.NanocadSlabs;
+        // _materialsThermalConductivity = rawData.MaterialsThermalConductivity;
+        // _cardinalDirections = rawData.CardinalDirections;
+        // _projectData = rawData.ProjectData;
+        _validator = validator;
+        _geometry = geometry;
+    }
+
+    public List<SpaceDto> Transform(NanocadRawData rawData)
+    {
+        _nanocadSpaces = rawData.NanocadSpaces;
+        _nanocadWalls = rawData.NanocadWalls;
+        _nanocadOpenings = rawData.NanocadOpenings;
+        _nanocadGrids = rawData.NanocadGrids;
+        _nanocadSlabs = rawData.NanocadSlabs;
+        _materialsThermalConductivity = rawData.MaterialsThermalConductivity;
+        _cardinalDirections = rawData.CardinalDirections;
+        _projectData = rawData.ProjectData;
+        
+        CreateSpaces();
+        
+        MoveSpaceInsideEdges();
+
+        CreateWalls();
+
+        CreateOpenings();
+
+        CreateFloorAreas();
+
+        CreateCeilings();
+        
+        return _spaceDtos;
+    }
+
+    private void CreateSpaces()
+    {
+        _spaceDtos = new List<SpaceDto>();
         foreach (var nanocadSpace in _nanocadSpaces)
         {
             // создаем помещение
@@ -156,7 +405,39 @@ public class Adapter
         }
         _validator.ValidateSpaces(_spaceDtos);
     }
+    
+    /// <summary>
+    /// Сдвиг внутренних граней помещения до середины внутренней стены
+    /// </summary>
+    private void MoveSpaceInsideEdges()
+    {
+        foreach (var space in _spaceDtos)
+        {
+            var spaceEdges = space.Edges;
+            for (int i = 0; i < spaceEdges.Count; i++)
+            {
+                var currentEdge = spaceEdges[i];
+                if (currentEdge.ModelWall!.GetPosition() == SurfacePosition.Inside) //TODO:: реализовать для нескольких стен, в т.ч. разных
+                {
+                    var previousEdge = spaceEdges[i == 0 ? spaceEdges.Count - 1 : i - 1];
+                    var nextEdge = spaceEdges[i == spaceEdges.Count - 1 ? 0 : i + 1];
+                    var offset = - currentEdge.ModelWall!.Thickness / 2;
 
+                    var newLine = _geometry.MoveLine(currentEdge.LineString, offset);
+                    
+                    // новые точки пересечения
+                    var newIntersectionStartPoint = _geometry.FindIntersectionPoint(newLine, previousEdge.LineString);
+                    var newIntersectionEndPoint = _geometry.FindIntersectionPoint(newLine, nextEdge.LineString);
+                    
+                    // меняем координаты отрезков
+                    previousEdge.ChangeCoordinates(previousEdge.Start, newIntersectionStartPoint);
+                    nextEdge.ChangeCoordinates(newIntersectionEndPoint, nextEdge.End);
+                    currentEdge.ChangeCoordinates(newIntersectionStartPoint, newIntersectionEndPoint);
+                }
+            }
+        }
+    }
+    
     /// <summary>
     /// Создание участка стены для помещения
     /// </summary>
@@ -239,7 +520,7 @@ public class Adapter
             }
         }
     }
-
+    
     private void CreateOpenings()
     {
         foreach (var space in _spaceDtos)
@@ -277,7 +558,7 @@ public class Adapter
 
         _validator.ValidateOpenings(_spaceDtos.SelectMany(x => x.Edges).SelectMany(x => x.Walls).SelectMany(x => x.Openings).ToList());
     }
-
+    
     private void CreateFloorAreas()
     {
         var fistFloor = _nanocadGrids.Single().AxisZ.Points.OrderBy(x => x.Position).First(); //TODO: что если несколько сеток осей?
@@ -411,16 +692,7 @@ public class Adapter
             }
         }
     }
-
-    private Building GetBuilding()
-    {
-        return new Building
-        {
-            OutsideTemperature = _projectData!.OutsideTemperature,
-            Spaces = _spaceDtos.Select(x => x.ToSpace()).ToList()
-        };
-    }
-
+    
     /// <summary>
     /// Создание полигона для фактического участка стены помещения
     /// </summary>
@@ -447,166 +719,48 @@ public class Adapter
         }
         return cardinalDirection;
     }
-    
-    /// <summary>
-    /// Сдвиг внутренних граней помещения до середины внутренней стены
-    /// </summary>
-    private void MoveSpaceInsideEdges()
-    {
-        foreach (var space in _spaceDtos)
-        {
-            var spaceEdges = space.Edges;
-            for (int i = 0; i < spaceEdges.Count; i++)
-            {
-                var currentEdge = spaceEdges[i];
-                if (currentEdge.ModelWall!.GetPosition() == SurfacePosition.Inside) //TODO:: реализовать для нескольких стен, в т.ч. разных
-                {
-                    var previousEdge = spaceEdges[i == 0 ? spaceEdges.Count - 1 : i - 1];
-                    var nextEdge = spaceEdges[i == spaceEdges.Count - 1 ? 0 : i + 1];
-                    var offset = - currentEdge.ModelWall!.Thickness / 2;
+}
 
-                    var newLine = _geometry.MoveLine(currentEdge.LineString, offset);
-                    
-                    // новые точки пересечения
-                    var newIntersectionStartPoint = _geometry.FindIntersectionPoint(newLine, previousEdge.LineString);
-                    var newIntersectionEndPoint = _geometry.FindIntersectionPoint(newLine, nextEdge.LineString);
-                    
-                    // меняем координаты отрезков
-                    previousEdge.ChangeCoordinates(previousEdge.Start, newIntersectionStartPoint);
-                    nextEdge.ChangeCoordinates(newIntersectionEndPoint, nextEdge.End);
-                    currentEdge.ChangeCoordinates(newIntersectionStartPoint, newIntersectionEndPoint);
-                }
-            }
-        }
+public class NanocadRawData
+{
+    public List<SpaceEntity> NanocadSpaces { get; }
+    public List<LinearBuildingWall> NanocadWalls { get; }
+    public List<BuildingOpening> NanocadOpenings { get; }
+    public List<CoordinateGridRef> NanocadGrids { get; }
+    public List<BuildingSlab> NanocadSlabs { get; }
+    public Dictionary<string, double> MaterialsThermalConductivity { get; }
+    public Dictionary<CardinalDirection, Vector2D> CardinalDirections { get; }
+    public ProjectDataDto ProjectData { get; }
+
+    public NanocadRawData(
+        List<SpaceEntity> nanocadSpaces,
+        List<LinearBuildingWall> nanocadWalls,
+        List<BuildingOpening> nanocadOpenings,
+        List<CoordinateGridRef> nanocadGrids,
+        List<BuildingSlab> nanocadSlabs,
+        Dictionary<string, double> materialsThermalConductivity,
+        Dictionary<CardinalDirection, Vector2D> cardinalDirections,
+        ProjectDataDto projectData)
+    {
+        NanocadSpaces = nanocadSpaces;
+        NanocadWalls =  nanocadWalls;
+        NanocadOpenings = nanocadOpenings;
+        NanocadGrids = nanocadGrids;
+        NanocadSlabs = nanocadSlabs;
+        MaterialsThermalConductivity = materialsThermalConductivity;
+        CardinalDirections = cardinalDirections;
+        ProjectData = projectData;
     }
-    
-    private IEnumerable<T> FindObjects<T>() where T: Entity
+}
+
+public class ModelBuilder
+{
+    public Building GetBuilding(ProjectDataDto projectData, List<SpaceDto> spaces)
     {
-        var db = _document.Database;
-
-        var tr = db.TransactionManager.StartTransaction();
-        var filter = new SelectionFilter(new[] {
-            new TypedValue((int)DxfCode.Start, RXObject.GetClass(typeof(T)).DxfName)
-        });
-        var promptResult = _editor.SelectAll(filter);
-
-        var selectionSet = promptResult.Status == PromptStatus.OK ? promptResult.Value : null;
-
-        if (selectionSet == null || selectionSet.Count < 1)
-            selectionSet = new SelectionSet();
-
-        foreach (SelectedObject selectedObject in selectionSet)
+        return new Building
         {
-            var dbObject = tr.GetObject(selectedObject.ObjectId, OpenMode.ForRead);
-            if (dbObject is T res)
-                yield return res;
-        }
-        tr.Commit();
-    }
-
-    private void InitProjectData()
-    {
-        _validator.CollectionIsNotEmpty(_nanocadSpaces);
-        _validator.CollectionIsNotEmpty(_nanocadWalls);
-        _validator.CollectionIsNotEmpty(_nanocadOpenings);
-        _validator.CollectionIsNotEmpty(_nanocadSlabs);
-        _validator.CollectionIsNotEmpty(_nanocadGrids);
-        
-        // Ищем или создаем ProjectData на чертеже
-        var projectData = GetProjectData();
-        if (projectData == null)
-        {
-            CreateProjectData();
-            projectData = GetProjectData();
-        }
-        
-        _projectData = new ProjectDataDto
-        {
-            OutsideTemperature = double.Parse(projectData!.GetParameter("HL_OUTSIDE_TEMPERATURE"), NumberStyles.Any, CultureInfo.InvariantCulture),
-            FirstFloorAreaThermalConductivity = double.Parse(projectData!.GetParameter("HL_FLOOR_AREA1_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
-            SecondFloorAreaThermalConductivity = double.Parse(projectData!.GetParameter("HL_FLOOR_AREA2_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
-            ThirdFloorAreaThermalConductivity = double.Parse(projectData!.GetParameter("HL_FLOOR_AREA3_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
-            FourthFloorAreaThermalConductivity = double.Parse(projectData!.GetParameter("HL_FLOOR_AREA4_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
+            OutsideTemperature = projectData.OutsideTemperature,
+            Spaces = spaces.Select(x => x.ToSpace()).ToList()
         };
-        
-        _validator.ValidateProjectData(_projectData);
-
-        // определяем положение сторон света
-        _cardinalDirections = new Dictionary<CardinalDirection, Vector2D>
-        {
-            [CardinalDirection.N] = new (new Coordinate(projectData!.YDir.X, projectData.YDir.Y))
-        };
-        for (int i = 1; i < 8; i++)
-        {
-            _cardinalDirections[(CardinalDirection)i] = _cardinalDirections[(CardinalDirection)(i - 1)].Rotate(- Math.PI / 4);
-        }
-        
-        // Ищем используемые в проекте материалы
-        var materialLibrary = ProjectMaterialLibrary.Current;
-
-        var surfaces = new List<StructuralSurface>();
-        surfaces.AddRange(_nanocadSlabs);
-        surfaces.AddRange(_nanocadWalls);
-        
-        foreach (var surface in surfaces)
-        {
-            var materialId = surface.GetElementData().GetParameter(Parameter.Names.BuildMaterialId)?.Value;
-            if (materialId != null && !_materialsThermalConductivity.ContainsKey(materialId))
-            {
-                var material = materialLibrary.GetMaterialById(materialId);
-                var thermalConductivity = material.GetParameter("BUILD_THERMAL_CONDUCTIVITY");
-                _materialsThermalConductivity[materialId] = double.TryParse(thermalConductivity, NumberStyles.Any , CultureInfo.InvariantCulture, out var result) ? result : 0.0 ;
-            }
-        }
-        
-        _validator.ValidateMaterials(_materialsThermalConductivity);
-    }
-
-    private void CreateProjectData()
-    {
-        var db = _document.Database;
-    
-        var tr = db.TransactionManager.StartTransaction();
-
-        var projectData = new ProjectDataObject(new ProjectDataSpecification());
-        var collector = new Collector();
-        var tree = collector.Collect(projectData);
-        
-        var parametricEntityConverter = new TreeToParametricEntityConverter();
-        var box = parametricEntityConverter.Convert(tree);
-        
-        box.UpdateElements();
-        box.ReCalculateParametric(ViewMode.Plan2D);
-        
-        Utilities.AddEntityToDatabase(db, tr, box);
-        
-        tr.Commit();
-    }
-    
-    private ParametricEntity? GetProjectData()
-    {
-        var editor = _document.Editor;
-        var db = _document.Database;
-    
-        var tr = db.TransactionManager.StartTransaction();
-
-        var promptResult = editor.SelectAll();
-    
-        var selectionSet = promptResult.Status == PromptStatus.OK ? promptResult.Value : null;
-    
-        if (selectionSet == null || selectionSet.Count < 1)
-            selectionSet = new SelectionSet();
-
-        var result = new List<ParametricEntity>();
-        
-        foreach (SelectedObject selectedObject in selectionSet)
-        {
-            var dbObject = tr.GetObject(selectedObject.ObjectId, OpenMode.ForRead);
-            if (dbObject is ParametricEntity res && res.Name == "ProjectData")
-                result.Add(res);
-        }
-        
-        tr.Commit();
-        return result.FirstOrDefault();
     }
 }
