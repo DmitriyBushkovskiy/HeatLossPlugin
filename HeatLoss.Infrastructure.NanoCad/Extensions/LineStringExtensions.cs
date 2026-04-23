@@ -2,7 +2,7 @@
 using Teigha.DatabaseServices;
 using Teigha.Geometry;
 
-namespace HeatLoss.NanoCadAdapter.Extensions;
+namespace HeatLoss.Infrastructure.NanoCad.Extensions;
 
 public static class LineStringExtensions
 {

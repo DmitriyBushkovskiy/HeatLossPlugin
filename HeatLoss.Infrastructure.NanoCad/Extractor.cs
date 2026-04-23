@@ -4,7 +4,7 @@
 // using Teigha.DatabaseServices;
 // using Teigha.Runtime;
 //
-// namespace HeatLoss.NanoCadAdapter;
+// namespace HeatLoss.Infrastructure.NanoCad;
 //
 // public class Extractor
 // {

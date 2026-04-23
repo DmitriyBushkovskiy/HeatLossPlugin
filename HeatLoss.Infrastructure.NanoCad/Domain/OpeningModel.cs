@@ -2,9 +2,9 @@
 using HeatLoss.Domain.Surfaces;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.NanoCadAdapter.DTO;
+namespace HeatLoss.Infrastructure.NanoCad.Domain;
 
-public class OpeningDto
+public class OpeningModel
 {
     public Guid Id { get; set; }
     public Polygon Polygon { get; set; } = null!;

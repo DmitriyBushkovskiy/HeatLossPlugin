@@ -1,4 +1,4 @@
-﻿namespace HeatLoss.NanoCadAdapter.Exceptions;
+﻿namespace HeatLoss.Infrastructure.NanoCad.Exceptions;
 
 public class ValidationException : Exception
 {

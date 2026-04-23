@@ -1,6 +1,6 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
 
-namespace HeatLoss.NanoCadAdapter.Extensions;
+namespace HeatLoss.Infrastructure.NanoCad.Extensions;
 
 public static class ParametricEntBaseExtensions
 {

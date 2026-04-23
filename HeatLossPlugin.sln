@@ -4,7 +4,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.Plugin", "HeatLoss
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.Domain", "HeatLoss.Domain\HeatLoss.Domain.csproj", "{AE450F13-D36A-4CC8-991E-6C1385959684}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.NanoCadAdapter", "HeatLoss.NanoCadAdapter\HeatLoss.NanoCadAdapter.csproj", "{861283FB-7488-4FC2-9B5C-BF386C9DA620}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.Infrastructure.NanoCad", "HeatLoss.Infrastructure.NanoCad\HeatLoss.Infrastructure.NanoCad.csproj", "{861283FB-7488-4FC2-9B5C-BF386C9DA620}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.Geometry", "HeatLoss.Geometry\HeatLoss.Geometry.csproj", "{E7F85936-AAD4-420D-B349-4EF99EEC34E6}"
 EndProject
@@ -12,7 +12,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.Reports", "HeatLos
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp1", "ConsoleApp1\ConsoleApp1.csproj", "{5BC8FFA4-0839-4293-84CC-09540B55D14B}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "BimAdapters", "BimAdapters", "{89D0080E-AE36-45CA-9B9F-E82F9461724A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HeatLoss.Infrastructure", "HeatLoss.Infrastructure", "{89D0080E-AE36-45CA-9B9F-E82F9461724A}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HeatLoss.Calculations", "HeatLoss.Calculations\HeatLoss.Calculations.csproj", "{9D3D5A7F-71A1-431C-9E38-30BEDDEE853E}"
 EndProject

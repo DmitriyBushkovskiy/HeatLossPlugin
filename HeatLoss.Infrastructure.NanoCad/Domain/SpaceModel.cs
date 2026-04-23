@@ -1,17 +1,17 @@
-﻿using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.Domain.Surfaces;
+﻿using HeatLoss.Domain.Surfaces;
+using HeatLoss.Infrastructure.NanoCad.RawModels;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.NanoCadAdapter.DTO;
+namespace HeatLoss.Infrastructure.NanoCad.Domain;
 
-public class SpaceDto
+public class SpaceModel
 {
     public long Id { get; set; }
     public string Number { get; init; } = null!;
     public string Name { get; init; } = null!;
-    public FloorDto? Floor { get; set; }
-    public List<CeilingDto> Ceiling { get; } = new();
-    public List<SpaceEdgeDto> Edges { get; } = new();
+    public FloorModel? Floor { get; set; }
+    public List<CeilingModel> Ceiling { get; } = new();
+    public List<SpaceEdgeModel> Edges { get; } = new();
     public double BottomLevel  { get; init; }
     public double Height { get; init; }
     public double Temperature { get; init; }
@@ -23,18 +23,18 @@ public class SpaceDto
         return new Polygon(new LinearRing(coordinates.ToArray()));
     }
 
-    public double GetVerticalIntersectionLenght(SpaceDto anotherSpace)
+    public double GetVerticalIntersectionLenght(SpaceModel anotherSpace)
     {
         var (bottom, top) = GetVerticalIntersectionLevels(anotherSpace);
         return top - bottom;
     }
     
-    public (double bottom, double top) GetVerticalIntersectionLevels(SpaceDto anotherSpace)
+    public (double bottom, double top) GetVerticalIntersectionLevels(SpaceModel anotherSpace)
     {
         return (Math.Max(BottomLevel , anotherSpace.BottomLevel), Math.Min(BottomLevel + Height, anotherSpace.BottomLevel + anotherSpace.Height));
     }
 
-    public bool HaveVerticalIntersection(SpaceDto anotherSpace)
+    public bool HaveVerticalIntersection(SpaceModel anotherSpace)
     {
         return GetVerticalIntersectionLenght(anotherSpace) > 0;
     }
@@ -52,19 +52,19 @@ public class SpaceDto
         };
     }
     
-    private (double bottom, double top) GetVerticalIntersectionLevels(LinearBuildingWall wall)
+    private (double bottom, double top) GetVerticalIntersectionLevels(LinearWallRawModel wallRaw)
     {
-        return (Math.Max(BottomLevel , wall.BasePoint.Z), Math.Min(BottomLevel + Height, wall.BasePoint.Z + wall.Height));
+        return (Math.Max(BottomLevel , wallRaw.BasePoint.Z), Math.Min(BottomLevel + Height, wallRaw.BasePoint.Z + wallRaw.Height));
     }
     
-    public bool HaveVerticalIntersection(LinearBuildingWall wall)
+    public bool HaveVerticalIntersection(LinearWallRawModel wallRaw)
     {
-        var (bottom, top) = GetVerticalIntersectionLevels(wall);
+        var (bottom, top) = GetVerticalIntersectionLevels(wallRaw);
         return top - bottom > 0;
     }
     
-    public bool IsOpeningBelong(BuildingOpening opening)
+    public bool IsOpeningBelong(OpeningRawModel openingRaw)
     {
-        return opening.BasePoint.Z >= BottomLevel && opening.BasePoint.Z + opening.Height <= BottomLevel + Height;
+        return openingRaw.BasePoint.Z >= BottomLevel && openingRaw.BasePoint.Z + openingRaw.Height <= BottomLevel + Height;
     }
 }

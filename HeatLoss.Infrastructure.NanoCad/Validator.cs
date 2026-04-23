@@ -1,9 +1,9 @@
-﻿using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.Domain.Enums;
+﻿using HeatLoss.Domain.Enums;
 using HeatLoss.Geometry;
-using HeatLoss.NanoCadAdapter.DTO;
-using HeatLoss.NanoCadAdapter.Exceptions;
-using HeatLoss.NanoCadAdapter.Extensions;
+using HeatLoss.Infrastructure.NanoCad.Extensions;
+using HeatLoss.Infrastructure.NanoCad.Domain;
+using HeatLoss.Infrastructure.NanoCad.Exceptions;
+using HeatLoss.Infrastructure.NanoCad.RawModels;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;
 using NetTopologySuite.Geometries;
@@ -11,7 +11,7 @@ using Teigha.Colors;
 using Teigha.DatabaseServices;
 using Teigha.Geometry;
 
-namespace HeatLoss.NanoCadAdapter;
+namespace HeatLoss.Infrastructure.NanoCad;
 
 public class Validator
 {
@@ -28,7 +28,7 @@ public class Validator
         _editor = _document.Editor;
         _geometry = new HeatLossGeometry();
         CreateLayer(LayerName);
-        // DeleteLayerObjects();
+        DeleteLayerObjects();
     }
 
     public void CollectionIsNotEmpty<T>(IEnumerable<T> collection)
@@ -36,17 +36,17 @@ public class Validator
         if (collection.Any()) return;
         var entity = typeof(T) switch
         {
-            { } t when t == typeof(SpaceEntity) => "помещения",
-            { } t when t == typeof(LinearBuildingWall) => "стены",
-            { } t when t == typeof(BuildingOpening) => "проемы",
-            { } t when t == typeof(BuildingSlab) => "перекрытия",
-            { } t when t == typeof(CoordinateGridRef) => "сетки осей",
+            { } t when t == typeof(SpaceRawModel) => "помещения",
+            { } t when t == typeof(LinearWallRawModel) => "стены",
+            { } t when t == typeof(OpeningRawModel) => "проемы",
+            { } t when t == typeof(SlabRawModel) => "перекрытия",
+            { } t when t == typeof(CoordinateGridRawModel) => "сетки осей",
             _ => throw new NotImplementedException(typeof(T).Name)
         };
         throw new ValidationException($"В модели отсутствуют {entity}");
     }
 
-    public void ValidateProjectData(ProjectDataDto projectData)
+    public void ValidateProjectData(ProjectDataModel projectData)
     {
         if (Math.Abs(projectData.OutsideTemperature - 100) < 1)
         {
@@ -67,7 +67,7 @@ public class Validator
             throw new ValidationException($"Указан неверный коэффициент теплопроводности для следующих материалов: {string.Join(", ", ids)}");
     }
     
-    public void ValidateSpaces(IEnumerable<SpaceDto> spaces)
+    public void ValidateSpaces(IEnumerable<SpaceModel> spaces)
     {
         var errorLines = new List<Line>();
         var isCorrect = true;
@@ -104,7 +104,7 @@ public class Validator
         }
     }
 
-    public void ValidateWalls(List<CoordinateGridRef> grids,  List<SpaceDto> spaces)
+    public void ValidateWalls(List<CoordinateGridRawModel> grids,  List<SpaceModel> spaces)
     {
         var isCorrect = true;
         var levels = grids.Single().AxisZ.Points.OrderBy(x => x.Position).ToList();
@@ -124,9 +124,9 @@ public class Validator
             throw new ValidationException("Ошибка при проверке стен");
     }
 
-    public void ValidateOpenings(List<OpeningDto> openings)
+    public void ValidateOpenings(List<OpeningModel> openings)
     {
-        var invalidOpenings = new List<OpeningDto>();
+        var invalidOpenings = new List<OpeningModel>();
         foreach (var opening in openings)
         {
             if (opening.ThermalConductivity <= 0)
@@ -148,7 +148,7 @@ public class Validator
             throw new ValidationException("Ошибка при проверке проемов");
     }
 
-    private bool ValidateWallsTypesAndPositions(List<SpaceDto> spaces, Polygon perimeter, double level)
+    private bool ValidateWallsTypesAndPositions(List<SpaceModel> spaces, Polygon perimeter, double level)
     {
         var isCorrect = true;
         
@@ -209,27 +209,27 @@ public class Validator
         tr.Commit();
     }
     
-    // private void DeleteLayerObjects()
-    // {
-    //     var db = _document.Database;
-    //
-    //     var tr = db.TransactionManager.StartTransaction();
-    //     
-    //     var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
-    //     var btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-    //
-    //     foreach (var objId in btr)
-    //     {
-    //         var ent = tr.GetObject(objId, OpenMode.ForWrite) as Entity;
-    //         if (ent != null && ent.Layer == LayerName)
-    //         {
-    //             ent.UpgradeOpen();
-    //             ent.Erase();
-    //         }
-    //     }
-    //
-    //     tr.Commit();
-    // }
+    private void DeleteLayerObjects()
+    {
+        var db = _document.Database;
+    
+        var tr = db.TransactionManager.StartTransaction();
+        
+        var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+        var btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+    
+        foreach (var objId in btr)
+        {
+            var ent = tr.GetObject(objId, OpenMode.ForWrite) as Entity;
+            if (ent != null && ent.Layer == LayerName)
+            {
+                ent.UpgradeOpen();
+                ent.Erase();
+            }
+        }
+    
+        tr.Commit();
+    }
     
     private void Print(IEnumerable<Entity> geometries)
     {

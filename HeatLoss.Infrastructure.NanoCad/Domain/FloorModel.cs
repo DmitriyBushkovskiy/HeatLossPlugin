@@ -1,10 +1,10 @@
 ﻿using HeatLoss.Domain.Surfaces;
 
-namespace HeatLoss.NanoCadAdapter.DTO;
+namespace HeatLoss.Infrastructure.NanoCad.Domain;
 
-public class FloorDto
+public class FloorModel
 {
-    public List<FloorAreaDto> FloorAreas { get; } = new();
+    public List<FloorAreaModel> FloorAreas { get; } = new();
     
     public List<FloorArea> ToFloorAreas()
     {

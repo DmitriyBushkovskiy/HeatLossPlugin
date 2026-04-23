@@ -1,15 +1,14 @@
-﻿using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.NanoCadAdapter.Extensions;
-using HeatLoss.Domain.Enums;
+﻿using HeatLoss.Domain.Enums;
 using HeatLoss.Domain.Surfaces;
+using HeatLoss.Infrastructure.NanoCad.RawModels;
 
-namespace HeatLoss.NanoCadAdapter.DTO;
+namespace HeatLoss.Infrastructure.NanoCad.Domain;
 
-public class CeilingDto
+public class CeilingModel
 {
     public double Area { get; init; }
-    public SpaceDto? Space { get; init; }
-    public BuildingSlab? Slab { get; init; }
+    public SpaceModel? Space { get; init; }
+    public SlabRawModel? Slab { get; init; }
     public SurfacePosition Position { get; init; }
     public double ThermalConductivity { get; init; }
     

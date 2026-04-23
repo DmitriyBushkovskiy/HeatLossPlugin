@@ -2,7 +2,7 @@
 using ParametricKit.Attributes;
 using ParametricKit.Primitives;
 
-namespace HeatLoss.NanoCadAdapter.Objects;
+namespace HeatLoss.Infrastructure.NanoCad.Objects;
 
 public class ProjectDataObject : EntitySource<ProjectDataSpecification>
     {

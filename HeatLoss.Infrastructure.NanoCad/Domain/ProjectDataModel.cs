@@ -1,6 +1,6 @@
-﻿namespace HeatLoss.NanoCadAdapter.DTO;
+﻿namespace HeatLoss.Infrastructure.NanoCad.Domain;
 
-public class ProjectDataDto
+public class ProjectDataModel
 {
     public double OutsideTemperature { get; init; }
     public double FirstFloorAreaThermalConductivity { get; init; }

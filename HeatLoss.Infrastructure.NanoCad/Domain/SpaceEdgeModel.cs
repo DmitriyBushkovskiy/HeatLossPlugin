@@ -1,19 +1,19 @@
-﻿using BIMStructureMgd.DatabaseObjects;
+﻿using HeatLoss.Infrastructure.NanoCad.RawModels;
 using NetTopologySuite.Geometries;
 
-namespace HeatLoss.NanoCadAdapter.DTO;
+namespace HeatLoss.Infrastructure.NanoCad.Domain;
 
-public class SpaceEdgeDto
+public class SpaceEdgeModel
 {
     public Guid Id  { get; private set; }
     public Coordinate Start { get; private set; }
     public Coordinate End { get; private set; }
     public LineString LineString { get; private set; }
-    public List<BuildingOpening> ModelOpenings { get; } = new();
-    public LinearBuildingWall? ModelWall { get; set; } //TODO: добавить реализацию с несколькими стенами
-    public List<WallDto> Walls { get; } = new();
+    public List<OpeningRawModel> ModelOpenings { get; } = new();
+    public LinearWallRawModel? ModelWall { get; set; } //TODO: добавить реализацию с несколькими стенами
+    public List<WallModel> Walls { get; } = new();
 
-    public SpaceEdgeDto(Coordinate start, Coordinate end)
+    public SpaceEdgeModel(Coordinate start, Coordinate end)
     {
         Id = Guid.NewGuid();
         Start = start;

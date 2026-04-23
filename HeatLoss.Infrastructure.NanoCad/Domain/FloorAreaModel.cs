@@ -1,8 +1,8 @@
 ﻿using HeatLoss.Domain.Enums;
 
-namespace HeatLoss.NanoCadAdapter.DTO;
+namespace HeatLoss.Infrastructure.NanoCad.Domain;
 
-public class FloorAreaDto
+public class FloorAreaModel
 {
     public FloorAreaNumber FloorAreaNumber { get; init; }
     public double Area { get; init; }
