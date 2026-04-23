@@ -1,4 +1,5 @@
-﻿using HeatLoss.Calculations;
+﻿using HeatLoss.Application;
+using HeatLoss.Calculations;
 using HeatLoss.Infrastructure.NanoCad;
 using HeatLoss.Domain.Enums;
 using HeatLoss.Domain.Results;
@@ -13,29 +14,22 @@ namespace HeatLoss.Plugin;
 
 public class Plugin
 {
-    private readonly Editor _editor;
-    
     private Building? _building;
     private BuildingHeatLossResult? _buildingHeatLossResult;
-
-    public Plugin()
-    {
-        var document = Application.DocumentManager.MdiActiveDocument;
-        _editor = document.Editor;
-    }
 
     [CommandMethod("HL_CALCULATE")]
     public void Foo_Calculate()
     {
+        var bimProvider = new NanoCadProvider();
         try
         {
-            var na = new BuildingProvider();
-            _building = na.GetBuildingInfo();
+            var buildingProvider = new BuildingProvider(bimProvider);
+            _building = buildingProvider.GetBuildingInfo();
         
             var calculator = new HeatLossCalculator();
             _buildingHeatLossResult = calculator.Calculate(_building);
         
-            na.SetHeatLossToModel(_buildingHeatLossResult);
+            buildingProvider.SetHeatLossToModel(_buildingHeatLossResult);
 
             var options = new ReportGeneratorOptions
             {
@@ -44,11 +38,11 @@ public class Plugin
         
             var reportGenerator = new ReportGenerator(options);
             reportGenerator.GenerateReport(_buildingHeatLossResult);
-            _editor.WriteMessage("Отчет сформирован!");
+            bimProvider.WriteMessage("Отчет сформирован!");
         }
         catch (Exception)
         {
-            _editor.WriteMessage("Произошла ошибка во время расчета. Повторите команду");
+            bimProvider.WriteMessage("Произошла ошибка во время расчета. Повторите команду");
             throw;
         }
     }
