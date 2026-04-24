@@ -6,25 +6,26 @@ using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.Common.Models;
 using NetTopologySuite.Geometries;
-using NetTopologySuite.Mathematics;
 using NetTopologySuite.Operation.Union;
 
 namespace HeatLoss.Application;
 
-public class BuildingModelBuilder
+public class BuildingModelFactory
 {
     private readonly HeatLossGeometry _geometry;
     private readonly Mapper _mapper;
     private readonly GeometryService _geometryService;
     private readonly Validator _validator;
+    private readonly IParameterResolver _parameterResolver;
     
-    public BuildingModelBuilder(
+    public BuildingModelFactory(
         HeatLossGeometry geometry,
         IBimProvider bimProvider)
     {
         _geometry = geometry;
-        _mapper = new Mapper();
-        _geometryService =  new GeometryService();
+        _parameterResolver = bimProvider.ParameterResolver;
+        _mapper = new Mapper(_parameterResolver);
+        _geometryService =  new GeometryService(bimProvider.ParameterResolver);
         _validator = new Validator(bimProvider);
     }
 
@@ -142,6 +143,7 @@ public class BuildingModelBuilder
     /// </summary>
     private void CreateWalls(List<SpaceModel> spaces, List<CoordinateGridDto> nanocadGrids, Dictionary<string, double> materialsThermalConductivity, Dictionary<CardinalDirection, HeatLoss.Infrastructure.Common.Models.Vector2D> cardinalDirections)
     {
+        var materialIdParameterName = _parameterResolver.GetParameterName(ParameterKey.MaterialId);
         foreach (var space in spaces)
         {
             for (var i = 0; i < space.Edges.Count; i++)
@@ -155,14 +157,14 @@ public class BuildingModelBuilder
                     var wall = new WallModel
                     {
                         Id = modelWall.Id,
-                        Mark = modelWall.GetParameter("BUILD_MATERIAL_ID"),
+                        Mark = modelWall.GetParameter(materialIdParameterName),
                         Position = modelWall.Position,
                         Thickness = modelWall.Thickness,
                         Polygon = CreateWallPolygon(edge.LineString, modelWall.Thickness, 0),
                         Width = edge.LineString.Length + GetWallThickness(prevEdge.ModelWall!) + GetWallThickness(nextEdge.ModelWall!),
                         Height = space.Height,
                         BottomLevel = space.BottomLevel,
-                        ThermalConductivity = materialsThermalConductivity[modelWall.GetParameter("BUILD_MATERIAL_ID")],
+                        ThermalConductivity = materialsThermalConductivity[modelWall.GetParameter(materialIdParameterName)],
                         CardinalDirection = GetCardinalDirection(cardinalDirections, edge.LineString, _geometryService.GetPolygon(modelWall))
                     };
                     edge.Walls.Add(wall);
@@ -186,7 +188,7 @@ public class BuildingModelBuilder
                                 {
                                     var wall = new WallModel
                                     {
-                                        Mark = modelWall.GetParameter("BUILD_MATERIAL_ID"),
+                                        Mark = modelWall.GetParameter(materialIdParameterName),
                                         Position = modelWall.Position,
                                         Thickness = modelWall.Thickness,
                                         Polygon = CreateWallPolygon(ls, modelWall.Thickness / 2, modelWall.Thickness / 2),
@@ -194,7 +196,7 @@ public class BuildingModelBuilder
                                         Width = intersection.Length,
                                         Height = space.GetVerticalIntersectionLenght(anotherSpace),
                                         BottomLevel = space.GetVerticalIntersectionLevels(anotherSpace).bottom,
-                                        ThermalConductivity = materialsThermalConductivity[modelWall.GetParameter("BUILD_MATERIAL_ID")]
+                                        ThermalConductivity = materialsThermalConductivity[modelWall.GetParameter(materialIdParameterName)]
                                     };
                                     edge.Walls.Add(wall);
                                 }
@@ -244,9 +246,9 @@ public class BuildingModelBuilder
                                 Width = opening.Width,
                                 Height = opening.Height,
                                 BottomLevel = opening.BasePoint.Z,
-                                ThermalConductivity = double.TryParse(opening.GetParameter("BUILD_THERMAL_CONDUCTIVITY"),  NumberStyles.Any , CultureInfo.InvariantCulture,out var value) ? value : 0,
+                                ThermalConductivity = double.TryParse(opening.GetParameter(_parameterResolver.GetParameterName(ParameterKey.MaterialThermalConductivity)),  NumberStyles.Any , CultureInfo.InvariantCulture,out var value) ? value : 0,
                                 Type = opening.Type,
-                                Mark = opening.GetParameter("BOM_MARK"),
+                                Mark = opening.GetParameter(_parameterResolver.GetParameterName(ParameterKey.OpeningMark)),
                                 CardinalDirection = wall.Position == SurfacePosition.Outside ? GetCardinalDirection(cardinalDirections, edge.LineString, openingPolygon) : null
                             });
                         }
@@ -362,7 +364,7 @@ public class BuildingModelBuilder
                                     Area = Math.Round(floorIntersection.Area / 1_000_000, 2),
                                     Position = SurfacePosition.Inside,
                                     Slab = slab,
-                                    ThermalConductivity = materialsThermalConductivity[slab.GetParameter("BUILD_MATERIAL_ID")],
+                                    ThermalConductivity = materialsThermalConductivity[slab.GetParameter(_parameterResolver.GetParameterName(ParameterKey.MaterialId))],
                                 };
                                 currentSpace.Ceiling.Add(ceiling);
                             }
@@ -383,7 +385,7 @@ public class BuildingModelBuilder
                                 Area = Math.Round(currentSpace.GetPolygon().Area / 1_000_000, 2),
                                 Position = SurfacePosition.Outside,
                                 Slab = slab,
-                                ThermalConductivity = materialsThermalConductivity[slab.GetParameter("BUILD_MATERIAL_ID")],
+                                ThermalConductivity = materialsThermalConductivity[slab.GetParameter(_parameterResolver.GetParameterName(ParameterKey.MaterialId))],
                             };
                             currentSpace.Ceiling.Add(topCeiling);
                         }

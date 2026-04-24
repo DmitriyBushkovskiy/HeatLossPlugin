@@ -6,32 +6,32 @@ using HeatLoss.Infrastructure.Common.DTO;
 
 namespace HeatLoss.Application;
 
-public class BuildingProvider
+public class BuildingService
 {
     private readonly HeatLossGeometry _geometry;
     private readonly IBimProvider _bimProvider;
     private readonly Mapper _mapper;
 
-    public BuildingProvider(IBimProvider provider)
+    public BuildingService(IBimProvider provider)
     {
         _geometry = new HeatLossGeometry();
         _bimProvider = provider;
-        _mapper = new Mapper();
+        _mapper = new Mapper(_bimProvider.ParameterResolver);
     }
 
-    public Building GetBuildingInfo()
+    public Building CreateBuilding()
     {
-        var extractedData = _bimProvider.GetBuildingModel();
+        var extractedData = _bimProvider.ExtractBuildingData();
 
-        var modelBuilder = new BuildingModelBuilder(_geometry, _bimProvider);
+        var modelBuilder = new BuildingModelFactory(_geometry, _bimProvider);
 
         var building = modelBuilder.Build(extractedData);
         
         return new Building(building.OutsideTemperature, building.Spaces.Select(x => x.ToSpace()).ToList());
     }
 
-    public void SetHeatLossToModel(BuildingHeatLossResult heatLossResult)
+    public void SaveHeatLossToModel(BuildingHeatLossResult heatLossResult)
     {
-        _bimProvider.SetHeatLossToModel(_mapper.ToBuildingHeatLossResultDto(heatLossResult));
+        _bimProvider.SaveHeatLossToModel(_mapper.ToBuildingHeatLossResultDto(heatLossResult));
     }
 }

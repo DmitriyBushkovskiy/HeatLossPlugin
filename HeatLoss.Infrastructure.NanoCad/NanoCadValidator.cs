@@ -1,21 +1,22 @@
-﻿using HeatLoss.Infrastructure.Common.DTO;
+﻿using HeatLoss.Application;
+using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.NanoCad.Exceptions;
 using HostMgd.ApplicationServices;
 using Teigha.Colors;
 using Teigha.DatabaseServices;
+using OpenMode = Teigha.DatabaseServices.OpenMode;
 
 namespace HeatLoss.Infrastructure.NanoCad;
 
 public class NanoCadValidator
 {
-    private const string LayerName = "HL_VALIDATION";
     private readonly Color _defaultColor = Color.FromRgb(255, 0, 0);
     private readonly Document _document;
     
     public NanoCadValidator(Document document)
     {
         _document = document;
-        CreateLayer(LayerName);
+        CreateLayer(Constants.ValidationLayerName);
         DeleteLayerObjects();
     }
 
@@ -92,7 +93,7 @@ public class NanoCadValidator
         foreach (var objId in btr)
         {
             var ent = tr.GetObject(objId, OpenMode.ForWrite) as Entity;
-            if (ent != null && ent.Layer == LayerName)
+            if (ent != null && ent.Layer == Constants.ValidationLayerName)
             {
                 ent.UpgradeOpen();
                 ent.Erase();

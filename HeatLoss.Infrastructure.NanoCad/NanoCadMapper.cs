@@ -1,22 +1,24 @@
 ﻿using System.Globalization;
 using BIMStructureMgd.DatabaseObjects;
 using HeatLoss.Domain.Enums;
+using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.Common.Enums;
 using HeatLoss.Infrastructure.Common.Models;
 using HeatLoss.Infrastructure.NanoCad.Extensions;
-using Microsoft.VisualBasic.CompilerServices;
 
 namespace HeatLoss.Infrastructure.NanoCad;
 
-public class Mapper
+public class NanoCadMapper
 {
+    private readonly NanoCadParameterResolver _parameterResolver = new();
+
     public SpaceDto ToSpaceDto(SpaceEntity spaceEntity)
     {
         var parameters = spaceEntity.GetElementData().Parameters
-            .Select(x => new HeatLoss.Infrastructure.Common.Models.Parameter(x.Name, x.Value))
+            .Select(x => new Parameter(x.Name, x.Value))
             .ToList();
-        var bottomLevel = double.TryParse(parameters.FirstOrDefault(x => x.Name == "AEC_ELEMENT_POS_Z").Value,
+        var bottomLevel = double.TryParse(parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.SpaceBottomLevel)).Value,
             NumberStyles.Any, CultureInfo.InvariantCulture, out var level)
             ? level
             : 0;
@@ -54,12 +56,12 @@ public class Mapper
             Height = wall.Height,
             Parameters = parameters,
             Position = GetPosition(),
-            MaterialId =  parameters.FirstOrDefault(x => x.Name == "BUILD_MATERIAL_ID").Value ?? string.Empty
+            MaterialId =  parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.MaterialId)).Value ?? string.Empty
         };
         
         SurfacePosition GetPosition()
         {
-            var location = parameters.FirstOrDefault(x => x.Name == "LOCATION").Value;
+            var location = parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.WallLocation)).Value;
             switch (location)
             {
                 case "Снаружи":
@@ -75,7 +77,7 @@ public class Mapper
     public OpeningDto ToOpeningDto(BuildingOpening opening)
     {
         var parameters = opening.GetElementData().Parameters
-            .Select(x => new HeatLoss.Infrastructure.Common.Models.Parameter(x.Name, x.Value))
+            .Select(x => new Parameter(x.Name, x.Value))
             .ToList();
         
         return new OpeningDto
@@ -123,11 +125,11 @@ public class Mapper
     {
         return new ProjectDataDto
         {
-            OutsideTemperature = double.Parse(projectData.GetParameter("HL_OUTSIDE_TEMPERATURE"), NumberStyles.Any, CultureInfo.InvariantCulture),
-            FirstFloorAreaThermalConductivity = double.Parse(projectData.GetParameter("HL_FLOOR_AREA1_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
-            SecondFloorAreaThermalConductivity = double.Parse(projectData.GetParameter("HL_FLOOR_AREA2_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
-            ThirdFloorAreaThermalConductivity = double.Parse(projectData.GetParameter("HL_FLOOR_AREA3_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
-            FourthFloorAreaThermalConductivity = double.Parse(projectData.GetParameter("HL_FLOOR_AREA4_THERMAL_CONDUCTIVITY"), NumberStyles.Any, CultureInfo.InvariantCulture),
+            OutsideTemperature = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.OutsideTemperature)), NumberStyles.Any, CultureInfo.InvariantCulture),
+            FirstFloorAreaThermalConductivity = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.FirstFloorAreaConductivity)), NumberStyles.Any, CultureInfo.InvariantCulture),
+            SecondFloorAreaThermalConductivity = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.SecondFloorAreaConductivity)), NumberStyles.Any, CultureInfo.InvariantCulture),
+            ThirdFloorAreaThermalConductivity = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.ThirdFloorAreaConductivity)), NumberStyles.Any, CultureInfo.InvariantCulture),
+            FourthFloorAreaThermalConductivity = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.FourthFloorAreaConductivity)), NumberStyles.Any, CultureInfo.InvariantCulture),
         };
     }
 }

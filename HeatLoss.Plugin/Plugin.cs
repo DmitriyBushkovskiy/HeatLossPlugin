@@ -18,18 +18,18 @@ public class Plugin
     private BuildingHeatLossResult? _buildingHeatLossResult;
 
     [CommandMethod("HL_CALCULATE")]
-    public void Foo_Calculate()
+    public void CalculateHeatLoss()
     {
         var bimProvider = new NanoCadProvider();
         try
         {
-            var buildingProvider = new BuildingProvider(bimProvider);
-            _building = buildingProvider.GetBuildingInfo();
+            var buildingProvider = new BuildingService(bimProvider);
+            _building = buildingProvider.CreateBuilding();
         
             var calculator = new HeatLossCalculator();
             _buildingHeatLossResult = calculator.Calculate(_building);
-        
-            buildingProvider.SetHeatLossToModel(_buildingHeatLossResult);
+            
+            buildingProvider.SaveHeatLossToModel(_buildingHeatLossResult);
 
             var options = new ReportGeneratorOptions
             {

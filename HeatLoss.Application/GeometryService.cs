@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using HeatLoss.Geometry;
 using HeatLoss.Geometry.Extensions;
+using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.Common.Enums;
 using NetTopologySuite.Geometries;
@@ -10,9 +11,16 @@ namespace HeatLoss.Application;
 
 public class GeometryService
 {
+    private readonly IParameterResolver _parameterResolver;
+
+    public GeometryService(IParameterResolver parameterResolver)
+    {
+        _parameterResolver = parameterResolver;
+    }
+
     public Polygon GetPolygon(LinearWallDto wall)
     {
-        var axis = Enum.Parse<EntityAxis>(wall.Parameters.FirstOrDefault(x => x.Name == "AEC_PART_AXIS").Value ?? string.Empty);
+        var axis = Enum.Parse<EntityAxis>(wall.Parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.PartAxis)).Value ?? string.Empty);
         var leftOffset = axis switch
         {
             EntityAxis.Inside => wall.Thickness,
@@ -42,7 +50,7 @@ public class GeometryService
     
     public Polygon GetPolygon(OpeningDto opening)
     {
-        var axis = Enum.Parse<EntityAxis>(opening.Parameters.FirstOrDefault(x => x.Name == "AEC_PART_AXIS").Value ?? string.Empty);
+        var axis = Enum.Parse<EntityAxis>(opening.Parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.PartAxis)).Value ?? string.Empty);
         var endPoint = opening.BasePoint + opening.XDir * opening.Width;
         var position = opening.OpeningSide == OpeningSideType.Inside ? -1 : 1;
         

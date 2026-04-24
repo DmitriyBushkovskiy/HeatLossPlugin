@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using HeatLoss.Application.Models;
 using HeatLoss.Domain.Results;
+using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.Common.Models;
 using NetTopologySuite.Geometries;
@@ -9,6 +10,13 @@ namespace HeatLoss.Application;
 
 public class Mapper
 {
+    private readonly IParameterResolver _parameterResolver;
+
+    public Mapper(IParameterResolver parameterResolver)
+    {
+        _parameterResolver = parameterResolver;
+    }
+
     public SpaceModel ToSpaceModel(SpaceDto space)
     {
         return new SpaceModel
@@ -18,7 +26,7 @@ public class Mapper
             Number = space.Number,
             BottomLevel = space.BottomLevel,
             Height = space.Height,
-            Temperature = double.TryParse(space.Parameters.FirstOrDefault(x => x.Name == "HL_SPACE_TEMPERATURE").Value, NumberStyles.Any , CultureInfo.InvariantCulture, out var temperature)
+            Temperature = double.TryParse(space.Parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.SpaceTemperature)).Value, NumberStyles.Any , CultureInfo.InvariantCulture, out var temperature)
                 ? temperature
                 : 0,
         };

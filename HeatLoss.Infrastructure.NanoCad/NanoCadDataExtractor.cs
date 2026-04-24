@@ -3,7 +3,6 @@ using BIMStructureMgd.Common;
 using BIMStructureMgd.DatabaseObjects;
 using HeatLoss.Infrastructure.NanoCad.Extensions;
 using HeatLoss.Domain.Enums;
-using HeatLoss.Domain.Results;
 using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.Common.Models;
@@ -19,28 +18,30 @@ using Utilities = BIMStructureMgd.Common.Utilities;
 
 namespace HeatLoss.Infrastructure.NanoCad;
 
-public class Extractor
+public class NanoCadDataExtractor
 {
     private readonly Document _document;
     private readonly Editor _editor;
     private readonly NanoCadValidator _nanoCadValidator;
-    private readonly Mapper _mapper;
+    private readonly NanoCadMapper _nanoCadMapper;
+    private readonly IParameterResolver _parameterResolver;
     
-    public Extractor(Document document, NanoCadValidator nanoCadValidator)
+    public NanoCadDataExtractor(Document document, NanoCadValidator nanoCadValidator)
     {
         _document = document;
         _editor = _document.Editor;
         _nanoCadValidator = nanoCadValidator;
-        _mapper = new Mapper();
+        _nanoCadMapper = new NanoCadMapper();
+        _parameterResolver = new NanoCadParameterResolver();
     }
     
     public BimExtractedData ExtractData()
     {
-        var nanocadSpaces = FindObjects<SpaceEntity, SpaceDto>(x => _mapper.ToSpaceDto(x));
-        var nanocadWalls = FindObjects<LinearBuildingWall, LinearWallDto>(x => _mapper.ToWallDto(x));
-        var nanocadOpenings = FindObjects<BuildingOpening, OpeningDto>(x => _mapper.ToOpeningDto(x));
-        var nanocadGrids = FindObjects<CoordinateGridRef, CoordinateGridDto>(x => _mapper.ToCoordinateGridDto(x));
-        var nanocadSlabs = FindObjects<BuildingSlab, SlabDto>(x => _mapper.ToSlabDto(x));
+        var nanocadSpaces = FindObjects<SpaceEntity, SpaceDto>(x => _nanoCadMapper.ToSpaceDto(x));
+        var nanocadWalls = FindObjects<LinearBuildingWall, LinearWallDto>(x => _nanoCadMapper.ToWallDto(x));
+        var nanocadOpenings = FindObjects<BuildingOpening, OpeningDto>(x => _nanoCadMapper.ToOpeningDto(x));
+        var nanocadGrids = FindObjects<CoordinateGridRef, CoordinateGridDto>(x => _nanoCadMapper.ToCoordinateGridDto(x));
+        var nanocadSlabs = FindObjects<BuildingSlab, SlabDto>(x => _nanoCadMapper.ToSlabDto(x));
         
         _nanoCadValidator.CollectionIsNotEmpty(nanocadSpaces);
         _nanoCadValidator.CollectionIsNotEmpty(nanocadWalls);
@@ -49,7 +50,7 @@ public class Extractor
         _nanoCadValidator.CollectionIsNotEmpty(nanocadGrids);
 
         var nanocadProjectData = GetProjectData();
-        var projectData = _mapper.ToProjectDataDto(nanocadProjectData);
+        var projectData = _nanoCadMapper.ToProjectDataDto(nanocadProjectData);
         _nanoCadValidator.ValidateProjectData(projectData);
 
         // определяем положение сторон света
@@ -76,7 +77,7 @@ public class Extractor
             if (materialId != string.Empty && !materialsThermalConductivity.ContainsKey(materialId))
             {
                 var material = materialLibrary.GetMaterialById(materialId);
-                var thermalConductivity = material.GetParameter("BUILD_THERMAL_CONDUCTIVITY");
+                var thermalConductivity = material.GetParameter(_parameterResolver.GetParameterName(ParameterKey.MaterialThermalConductivity));
                 materialsThermalConductivity[materialId] = double.TryParse(thermalConductivity, NumberStyles.Any , CultureInfo.InvariantCulture, out var result) ? result : 0.0 ;
             }
         }

@@ -12,7 +12,6 @@ namespace HeatLoss.Application;
 
 public class Validator
 {
-    private const string LayerName = "HL_VALIDATION";
     private readonly IBimProvider _bimProvider;
     private readonly HeatLossGeometry _geometry;
     private readonly Mapper _mapper;
@@ -21,7 +20,7 @@ public class Validator
     {
         _bimProvider = bimProvider;
         _geometry = new HeatLossGeometry();
-        _mapper = new Mapper();
+        _mapper = new Mapper(bimProvider.ParameterResolver);
     }
 
     public void ValidateSpaces(IEnumerable<SpaceModel> spaces)
@@ -50,7 +49,7 @@ public class Validator
             }
         }
         if(errorLines.Any())
-            _bimProvider.PrintGeometry(errorLines, LayerName, null);
+            _bimProvider.PrintGeometry(errorLines, Constants.ValidationLayerName, null);
         
         if (!isCorrect)
         {
@@ -94,7 +93,7 @@ public class Validator
             _bimProvider.WriteMessage("Найдены проемы с некорректным коэффициентом теплопроводности. Проемы выделены красным");
             foreach (var group in invalidOpenings.GroupBy(x => x.BottomLevel))
             {
-                _bimProvider.PrintGeometry(group.ToList().Select(x => _mapper.ToPolyline3D(x.Polygon, group.Key)).ToList(), LayerName, null);
+                _bimProvider.PrintGeometry(group.ToList().Select(x => _mapper.ToPolyline3D(x.Polygon, group.Key)).ToList(), Constants.ValidationLayerName, null);
             }
         }
     
@@ -115,7 +114,7 @@ public class Validator
                     isCorrect = false;
                     // Для наружных стен здания стоит свойство, что они внутренние
                     var line = _mapper.ToLine(edge.LineString, double.IsNaN(edge.Start.Z) ? 0 : edge.Start.Z);
-                    _bimProvider.PrintGeometry(new []{ line }, LayerName, null); //; Print(new []{line});
+                    _bimProvider.PrintGeometry(new []{ line }, Constants.ValidationLayerName, null); //; Print(new []{line});
                 }
                 foreach (var wall in edge.Walls)
                 {
@@ -123,7 +122,7 @@ public class Validator
                     if (wall.Position == SurfacePosition.Outside && perimeter.Contains(wall.Polygon))
                     {
                         isCorrect = false;
-                        _bimProvider.PrintGeometry( new []{_mapper.ToPolyline3D(wall.Polygon, wall.BottomLevel)}, LayerName, null);
+                        _bimProvider.PrintGeometry( new []{_mapper.ToPolyline3D(wall.Polygon, wall.BottomLevel)}, Constants.ValidationLayerName, null);
                     }
                 }
             }
@@ -131,7 +130,7 @@ public class Validator
     
         if (!isCorrect)
         {
-            _bimProvider.PrintGeometry( new []{_mapper.ToPolyline3D(perimeter, level)}, LayerName,  Color.FromArgb(0, 0, 255));
+            _bimProvider.PrintGeometry( new []{_mapper.ToPolyline3D(perimeter, level)}, Constants.ValidationLayerName,  Color.FromArgb(0, 0, 255));
             _bimProvider.WriteMessage("\nНайдены стены с неверными настройками расположения (внутрення/наружная)\nКрасным показаны стены или стороны помещения, синим - внешний периметр этажа");
         }
     

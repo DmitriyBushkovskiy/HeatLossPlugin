@@ -6,8 +6,9 @@ namespace HeatLoss.Infrastructure.Common;
 
 public interface IBimProvider
 {
-    BimExtractedData GetBuildingModel();
-    void SetHeatLossToModel(BuildingHeatLossResultDto heatLossResult);
+    IParameterResolver ParameterResolver { get; }
+    BimExtractedData ExtractBuildingData();
+    void SaveHeatLossToModel(BuildingHeatLossResultDto heatLossResult);
     void WriteMessage(string message);
     void PrintGeometry(IEnumerable<IDrawable> geometries, string layer, Color? color);
 }
