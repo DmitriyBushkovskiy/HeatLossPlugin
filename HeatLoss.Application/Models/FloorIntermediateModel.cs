@@ -2,11 +2,11 @@
 
 namespace HeatLoss.Application.Models;
 
-public class FloorModel
+public class FloorIntermediateModel
 {
-    public List<FloorAreaModel> FloorAreas { get; } = new();
+    public List<FloorAreaIntermediateModel> FloorAreas { get; } = new();
     
-    public List<FloorArea> ToFloorAreas()
+    public List<FloorArea> GetFloorAreas()
     {
         return FloorAreas
             .OrderBy(x => x.FloorAreaNumber)

@@ -1,4 +1,5 @@
 ﻿using HeatLoss.Infrastructure.Common;
+using HeatLoss.Infrastructure.Common.Enums;
 
 namespace HeatLoss.Infrastructure.NanoCad;
 

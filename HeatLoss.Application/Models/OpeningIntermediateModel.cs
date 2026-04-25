@@ -4,7 +4,7 @@ using NetTopologySuite.Geometries;
 
 namespace HeatLoss.Application.Models;
 
-public class OpeningModel
+public class OpeningIntermediateModel
 {
     public Guid Id { get; set; }
     public Polygon Polygon { get; set; } = null!;
@@ -16,19 +16,4 @@ public class OpeningModel
     public double ThermalConductivity  { get; init; }
     public OpeningType Type { get; init; }
     public CardinalDirection? CardinalDirection { get; init; }
-    
-    public Opening ToOpening()
-    {
-        return new Opening
-        {
-            Name = Name,
-            Mark = Mark,
-            Width = Width,
-            Height = Height,
-            Type = Type,
-            BottomLevel =  BottomLevel,
-            ThermalConductivity =  ThermalConductivity,
-            CardinalDirection = CardinalDirection
-        };
-    }
 }

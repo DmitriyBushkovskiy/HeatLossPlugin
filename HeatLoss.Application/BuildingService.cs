@@ -27,7 +27,7 @@ public class BuildingService
 
         var building = modelBuilder.Build(extractedData);
         
-        return new Building(building.OutsideTemperature, building.Spaces.Select(x => x.ToSpace()).ToList());
+        return new Building(building.OutsideTemperature, building.Spaces.Select(x => _mapper.ToSpace(x)).ToList());
     }
 
     public void SaveHeatLossToModel(BuildingHeatLossResult heatLossResult)

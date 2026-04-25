@@ -4,6 +4,7 @@ using HeatLoss.Application.Models;
 using HeatLoss.Domain.Enums;
 using HeatLoss.Geometry;
 using HeatLoss.Infrastructure.Common;
+using HeatLoss.Infrastructure.Common.Constants;
 using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.Common.Models;
 using NetTopologySuite.Geometries;
@@ -23,7 +24,7 @@ public class Validator
         _mapper = new Mapper(bimProvider.ParameterResolver);
     }
 
-    public void ValidateSpaces(IEnumerable<SpaceModel> spaces)
+    public void ValidateSpaces(IEnumerable<SpaceIntermediateModel> spaces)
     {
         var errorLines = new List<Line3D>();
         var isCorrect = true;
@@ -57,7 +58,7 @@ public class Validator
         }
     }
 
-    public void ValidateWalls(List<CoordinateGridDto> grids,  List<SpaceModel> spaces)
+    public void ValidateWalls(List<CoordinateGridDto> grids,  List<SpaceIntermediateModel> spaces)
     {
         var isCorrect = true;
         var levels = grids.Single().Levels.OrderBy(x => x.Position).ToList();
@@ -77,9 +78,9 @@ public class Validator
             throw new ValidationException("Ошибка при проверке стен");
     }
     
-    public void ValidateOpenings(List<OpeningModel> openings)
+    public void ValidateOpenings(List<OpeningIntermediateModel> openings)
     {
-        var invalidOpenings = new List<OpeningModel>();
+        var invalidOpenings = new List<OpeningIntermediateModel>();
         foreach (var opening in openings)
         {
             if (opening.ThermalConductivity <= 0)
@@ -101,7 +102,7 @@ public class Validator
             throw new ValidationException("Ошибка при проверке проемов");
     }
     
-    private bool ValidateWallsTypesAndPositions(List<SpaceModel> spaces, Polygon perimeter, double level)
+    private bool ValidateWallsTypesAndPositions(List<SpaceIntermediateModel> spaces, Polygon perimeter, double level)
     {
         var isCorrect = true;
         

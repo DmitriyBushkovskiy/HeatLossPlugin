@@ -4,14 +4,14 @@ using NetTopologySuite.Geometries;
 
 namespace HeatLoss.Application.Models;
 
-public class SpaceModel
+public class SpaceIntermediateModel
 {
     public long Id { get; set; }
     public string Number { get; init; } = null!;
     public string Name { get; init; } = null!;
-    public FloorModel? Floor { get; set; }
-    public List<CeilingModel> Ceiling { get; } = new();
-    public List<SpaceEdgeModel> Edges { get; } = new();
+    public FloorIntermediateModel? Floor { get; set; }
+    public List<CeilingIntermediateModel> Ceiling { get; } = new();
+    public List<SpaceEdgeIntermediateModel> Edges { get; } = new();
     public double BottomLevel  { get; init; }
     public double Height { get; init; }
     public double Temperature { get; init; }
@@ -23,33 +23,20 @@ public class SpaceModel
         return new Polygon(new LinearRing(coordinates.ToArray()));
     }
 
-    public double GetVerticalIntersectionLenght(SpaceModel anotherSpace)
+    public double GetVerticalIntersectionLenght(SpaceIntermediateModel anotherSpaceIntermediate)
     {
-        var (bottom, top) = GetVerticalIntersectionLevels(anotherSpace);
+        var (bottom, top) = GetVerticalIntersectionLevels(anotherSpaceIntermediate);
         return top - bottom;
     }
     
-    public (double bottom, double top) GetVerticalIntersectionLevels(SpaceModel anotherSpace)
+    public (double bottom, double top) GetVerticalIntersectionLevels(SpaceIntermediateModel anotherSpaceIntermediate)
     {
-        return (Math.Max(BottomLevel , anotherSpace.BottomLevel), Math.Min(BottomLevel + Height, anotherSpace.BottomLevel + anotherSpace.Height));
+        return (Math.Max(BottomLevel , anotherSpaceIntermediate.BottomLevel), Math.Min(BottomLevel + Height, anotherSpaceIntermediate.BottomLevel + anotherSpaceIntermediate.Height));
     }
 
-    public bool HaveVerticalIntersection(SpaceModel anotherSpace)
+    public bool HaveVerticalIntersection(SpaceIntermediateModel anotherSpaceIntermediate)
     {
-        return GetVerticalIntersectionLenght(anotherSpace) > 0;
-    }
-    
-    public Space ToSpace()
-    {
-        return new Space
-        {
-            Number = Number,
-            Name = Name,
-            Temperature = Temperature,
-            Walls = Edges.SelectMany(x => x.Walls).Select(x => x.ToWall()).ToList(),
-            FloorAreas = Floor?.ToFloorAreas() ?? new List<FloorArea>(),
-            Ceilings = Ceiling.Select(x => x.ToCeiling()).ToList(),
-        };
+        return GetVerticalIntersectionLenght(anotherSpaceIntermediate) > 0;
     }
     
     private (double bottom, double top) GetVerticalIntersectionLevels(LinearWallDto wallRaw)

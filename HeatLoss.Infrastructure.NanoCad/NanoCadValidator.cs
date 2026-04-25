@@ -1,10 +1,8 @@
-﻿using HeatLoss.Application;
+﻿using HeatLoss.Infrastructure.Common.Constants;
 using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.NanoCad.Exceptions;
 using HostMgd.ApplicationServices;
 using Teigha.Colors;
-using Teigha.DatabaseServices;
-using OpenMode = Teigha.DatabaseServices.OpenMode;
 
 namespace HeatLoss.Infrastructure.NanoCad;
 
@@ -16,8 +14,9 @@ public class NanoCadValidator
     public NanoCadValidator(Document document)
     {
         _document = document;
-        CreateLayer(Constants.ValidationLayerName);
-        DeleteLayerObjects();
+        var nanocadWriter = new NanoCadDataWriter(new NanoCadParameterResolver());
+        nanocadWriter.CreateLayer(Constants.ValidationLayerName, _defaultColor);
+        nanocadWriter.DeleteLayerObjects(Constants.ValidationLayerName);
     }
 
     public void CollectionIsNotEmpty<T>(IEnumerable<T> collection)
@@ -54,52 +53,5 @@ public class NanoCadValidator
 
         if (ids.Any())
             throw new ValidationException($"Указан неверный коэффициент теплопроводности для следующих материалов: {string.Join(", ", ids)}");
-    }
-    
-    private void CreateLayer(string layerName)
-    {
-        var db = _document.Database;
-        var tr = db.TransactionManager.StartTransaction();
-        
-        var layerTable = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForWrite);
-        
-        if (!layerTable.Has(layerName))
-        {
-            layerTable.UpgradeOpen();
-
-            var layer = new LayerTableRecord
-            {
-                Name = layerName,
-                Color = _defaultColor,
-                LineWeight = LineWeight.LineWeight050
-            };
-
-            layerTable.Add(layer);
-            tr.AddNewlyCreatedDBObject(layer, true);
-        }
-
-        tr.Commit();
-    }
-    
-    private void DeleteLayerObjects()
-    {
-        var db = _document.Database;
-    
-        var tr = db.TransactionManager.StartTransaction();
-        
-        var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
-        var btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-    
-        foreach (var objId in btr)
-        {
-            var ent = tr.GetObject(objId, OpenMode.ForWrite) as Entity;
-            if (ent != null && ent.Layer == Constants.ValidationLayerName)
-            {
-                ent.UpgradeOpen();
-                ent.Erase();
-            }
-        }
-    
-        tr.Commit();
     }
 }

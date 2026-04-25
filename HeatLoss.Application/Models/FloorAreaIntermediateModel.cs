@@ -2,7 +2,7 @@
 
 namespace HeatLoss.Application.Models;
 
-public class FloorAreaModel
+public class FloorAreaIntermediateModel
 {
     public FloorAreaNumber FloorAreaNumber { get; init; }
     public double Area { get; init; }

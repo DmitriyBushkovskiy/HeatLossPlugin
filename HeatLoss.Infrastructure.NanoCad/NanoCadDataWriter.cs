@@ -1,6 +1,7 @@
 ﻿using BIMStructureMgd.DatabaseObjects;
 using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
+using HeatLoss.Infrastructure.Common.Enums;
 using HeatLoss.Infrastructure.Common.Models;
 using HeatLoss.Infrastructure.NanoCad.Extensions;
 using HostMgd.ApplicationServices;
@@ -99,6 +100,53 @@ public class NanoCadDataWriter
             }
         }
         
+        tr.Commit();
+    }
+    
+    public void CreateLayer(string layerName, Color color)
+    {
+        var db = _document.Database;
+        var tr = db.TransactionManager.StartTransaction();
+        
+        var layerTable = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForWrite);
+        
+        if (!layerTable.Has(layerName))
+        {
+            layerTable.UpgradeOpen();
+
+            var layer = new LayerTableRecord
+            {
+                Name = layerName,
+                Color = color,
+                LineWeight = LineWeight.LineWeight050
+            };
+
+            layerTable.Add(layer);
+            tr.AddNewlyCreatedDBObject(layer, true);
+        }
+
+        tr.Commit();
+    }
+    
+    public void DeleteLayerObjects(string layerName)
+    {
+        var db = _document.Database;
+    
+        var tr = db.TransactionManager.StartTransaction();
+        
+        var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+        var btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+    
+        foreach (var objId in btr)
+        {
+            var ent = tr.GetObject(objId, OpenMode.ForWrite) as Entity;
+            if (ent != null && ent.Layer == layerName)
+            {
+                ent.UpgradeOpen();
+                ent.Erase();
+            }
+        }
+    
         tr.Commit();
     }
 }

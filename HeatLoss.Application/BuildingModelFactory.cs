@@ -4,6 +4,7 @@ using HeatLoss.Domain.Enums;
 using HeatLoss.Geometry;
 using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
+using HeatLoss.Infrastructure.Common.Enums;
 using HeatLoss.Infrastructure.Common.Models;
 using NetTopologySuite.Geometries;
 using NetTopologySuite.Operation.Union;
@@ -29,7 +30,7 @@ public class BuildingModelFactory
         _validator = new Validator(bimProvider);
     }
 
-    public BuildingModel Build(BimExtractedData rawData)
+    public BuildingIntermediateModel Build(BimExtractedData rawData)
     {
         var nanocadSpaces = rawData.Spaces;
         var nanocadWalls = rawData.Walls;
@@ -52,12 +53,12 @@ public class BuildingModelFactory
         
         CreateCeilings(spaces, nanocadGrids, nanocadSlabs, materialsThermalConductivity);
         
-        return new BuildingModel(projectData.OutsideTemperature, spaces);
+        return new BuildingIntermediateModel(projectData.OutsideTemperature, spaces);
     }
 
-    private List<SpaceModel> CreateSpaces(List<SpaceDto> nanocadSpaces, List<LinearWallDto> nanocadWalls, List<OpeningDto> nanocadOpenings)
+    private List<SpaceIntermediateModel> CreateSpaces(List<SpaceDto> nanocadSpaces, List<LinearWallDto> nanocadWalls, List<OpeningDto> nanocadOpenings)
     {
-        var spaces = new List<SpaceModel>();
+        var spaces = new List<SpaceIntermediateModel>();
         foreach (var nanocadSpace in nanocadSpaces)
         {
             // создаем помещение
@@ -69,7 +70,7 @@ public class BuildingModelFactory
                 var nextCoordinate = spaceCoordinates[i == spaceCoordinates.Count - 1 ? 0 : i + 1];
                 
                 // создаем сторону помещения
-                var spaceEdge = new SpaceEdgeModel(currentCoordinate, nextCoordinate);
+                var spaceEdge = new SpaceEdgeIntermediateModel(currentCoordinate, nextCoordinate);
                 
                 var possibleWalls = nanocadWalls
                     .Where(w => space.HaveVerticalIntersection(w))
@@ -109,7 +110,7 @@ public class BuildingModelFactory
     /// <summary>
     /// Сдвиг внутренних граней помещения до середины внутренней стены
     /// </summary>
-    private void MoveSpaceInsideEdges(List<SpaceModel> spaces)
+    private void MoveSpaceInsideEdges(List<SpaceIntermediateModel> spaces)
     {
         foreach (var space in spaces)
         {
@@ -141,7 +142,7 @@ public class BuildingModelFactory
     /// <summary>
     /// Создание участка стены для помещения
     /// </summary>
-    private void CreateWalls(List<SpaceModel> spaces, List<CoordinateGridDto> nanocadGrids, Dictionary<string, double> materialsThermalConductivity, Dictionary<CardinalDirection, HeatLoss.Infrastructure.Common.Models.Vector2D> cardinalDirections)
+    private void CreateWalls(List<SpaceIntermediateModel> spaces, List<CoordinateGridDto> nanocadGrids, Dictionary<string, double> materialsThermalConductivity, Dictionary<CardinalDirection, HeatLoss.Infrastructure.Common.Models.Vector2D> cardinalDirections)
     {
         var materialIdParameterName = _parameterResolver.GetParameterName(ParameterKey.MaterialId);
         foreach (var space in spaces)
@@ -154,7 +155,7 @@ public class BuildingModelFactory
                 {
                     var prevEdge = space.Edges[i == 0 ? space.Edges.Count - 1 : i - 1];
                     var nextEdge = space.Edges[i == space.Edges.Count - 1 ? 0 : i + 1];
-                    var wall = new WallModel
+                    var wall = new WallIntermediateModel
                     {
                         Id = modelWall.Id,
                         Mark = modelWall.GetParameter(materialIdParameterName),
@@ -186,7 +187,7 @@ public class BuildingModelFactory
                             {
                                 if (intersection is LineString ls)
                                 {
-                                    var wall = new WallModel
+                                    var wall = new WallIntermediateModel
                                     {
                                         Mark = modelWall.GetParameter(materialIdParameterName),
                                         Position = modelWall.Position,
@@ -221,7 +222,7 @@ public class BuildingModelFactory
         }
     }
     
-    private void CreateOpenings(List<SpaceModel> spaces, Dictionary<CardinalDirection, HeatLoss.Infrastructure.Common.Models.Vector2D> cardinalDirections)
+    private void CreateOpenings(List<SpaceIntermediateModel> spaces, Dictionary<CardinalDirection, HeatLoss.Infrastructure.Common.Models.Vector2D> cardinalDirections)
     {
         foreach (var space in spaces)
         {
@@ -238,7 +239,7 @@ public class BuildingModelFactory
                         var intersection = wall.Polygon.Intersection(openingPolygon);
                         if (!intersection.IsEmpty)
                         {
-                            wall.Openings.Add(new OpeningModel
+                            wall.Openings.Add(new OpeningIntermediateModel
                             {
                                 Id = Guid.NewGuid(),
                                 Polygon = openingPolygon,
@@ -260,7 +261,7 @@ public class BuildingModelFactory
         _validator.ValidateOpenings(spaces.SelectMany(x => x.Edges).SelectMany(x => x.Walls).SelectMany(x => x.Openings).ToList());
     }
     
-    private void CreateFloorAreas(List<SpaceModel> spaces, List<CoordinateGridDto> nanocadGrids, ProjectDataDto projectData)
+    private void CreateFloorAreas(List<SpaceIntermediateModel> spaces, List<CoordinateGridDto> nanocadGrids, ProjectDataDto projectData)
     {
         
         var fistFloor = nanocadGrids.Single().Levels.OrderBy(x => x.Position).First(); //TODO: что если несколько сеток осей?
@@ -277,11 +278,11 @@ public class BuildingModelFactory
         
         foreach (var space in firstFloorSpaces)
         {
-            var floor = new FloorModel();
+            var floor = new FloorIntermediateModel();
             var spacePolygon = UnaryUnionOp.Union(space.GetPolygon());
             if (fourthArea.Area > 0)
             {
-                floor.FloorAreas.Add(new FloorAreaModel
+                floor.FloorAreas.Add(new FloorAreaIntermediateModel
                 {
                     FloorAreaNumber = FloorAreaNumber.Fourth,
                     Area = Math.Round(fourthArea.Intersection(spacePolygon).Area/1000000, 2),
@@ -290,7 +291,7 @@ public class BuildingModelFactory
             }
             if (thirdArea.Area > 0)
             {
-                floor.FloorAreas.Add(new FloorAreaModel
+                floor.FloorAreas.Add(new FloorAreaIntermediateModel
                 {
                     FloorAreaNumber = FloorAreaNumber.Third,
                     Area = Math.Round(thirdArea.Intersection(spacePolygon).Area/1000000 - floor.FloorAreas.Sum(x => x.Area), 2),
@@ -299,7 +300,7 @@ public class BuildingModelFactory
             }
             if (secondArea.Area > 0)
             {
-                floor.FloorAreas.Add(new FloorAreaModel
+                floor.FloorAreas.Add(new FloorAreaIntermediateModel
                 {
                     FloorAreaNumber = FloorAreaNumber.Second,
                     Area = Math.Round(secondArea.Intersection(spacePolygon).Area/1000000 - floor.FloorAreas.Sum(x => x.Area), 2),
@@ -308,7 +309,7 @@ public class BuildingModelFactory
             }
             if (firstArea.Area > 0)
             {
-                floor.FloorAreas.Add(new FloorAreaModel
+                floor.FloorAreas.Add(new FloorAreaIntermediateModel
                 {
                     FloorAreaNumber = FloorAreaNumber.First,
                     Area = Math.Round(firstArea.Intersection(spacePolygon).Area/1000000 - floor.FloorAreas.Sum(x => x.Area), 2),
@@ -319,7 +320,7 @@ public class BuildingModelFactory
         }
     }
 
-    private void CreateCeilings(List<SpaceModel> spaces, List<CoordinateGridDto> nanocadGrids, List<SlabDto> nanocadSlabs, Dictionary<string, double> materialsThermalConductivity)
+    private void CreateCeilings(List<SpaceIntermediateModel> spaces, List<CoordinateGridDto> nanocadGrids, List<SlabDto> nanocadSlabs, Dictionary<string, double> materialsThermalConductivity)
     {
         var spacesByBottom = spaces.GroupBy(x => x.BottomLevel).ToDictionary(x => x.Key, x => x.ToList());
         var spacesByTop = spaces.GroupBy(x => x.BottomLevel + x.Height).ToDictionary(x => x.Key, x => x.ToList());
@@ -343,7 +344,7 @@ public class BuildingModelFactory
             
             foreach (var level in levels)
             {
-                var anotherSpaces = level.Item1 ?? new List<SpaceModel>();
+                var anotherSpaces = level.Item1 ?? new List<SpaceIntermediateModel>();
                 var anotherSlabs = level.Item2;
                 var isTop = level.Item3;
             
@@ -358,7 +359,7 @@ public class BuildingModelFactory
                             var slabIntersection = floorIntersection.Intersection(_geometryService.GetPolygon(slab));
                             if (!slabIntersection.IsEmpty && slabIntersection.Area > 0)
                             {
-                                var ceiling = new CeilingModel
+                                var ceiling = new CeilingIntermediateModel
                                 {
                                     Space = anotherSpace,
                                     Area = Math.Round(floorIntersection.Area / 1_000_000, 2),
@@ -380,7 +381,7 @@ public class BuildingModelFactory
                         var slabIntersection = currentSpace.GetPolygon().Intersection(_geometryService.GetPolygon(slab));
                         if (!slabIntersection.IsEmpty && slabIntersection.Area > 0)
                         {
-                            var topCeiling = new CeilingModel
+                            var topCeiling = new CeilingIntermediateModel
                             {
                                 Area = Math.Round(currentSpace.GetPolygon().Area / 1_000_000, 2),
                                 Position = SurfacePosition.Outside,

@@ -1,9 +1,12 @@
 ﻿using System.Globalization;
 using HeatLoss.Application.Models;
 using HeatLoss.Domain.Results;
+using HeatLoss.Domain.Surfaces;
 using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
+using HeatLoss.Infrastructure.Common.Enums;
 using HeatLoss.Infrastructure.Common.Models;
+using NetTopologySuite.Algorithm;
 using NetTopologySuite.Geometries;
 
 namespace HeatLoss.Application;
@@ -17,9 +20,9 @@ public class Mapper
         _parameterResolver = parameterResolver;
     }
 
-    public SpaceModel ToSpaceModel(SpaceDto space)
+    public SpaceIntermediateModel ToSpaceModel(SpaceDto space)
     {
-        return new SpaceModel
+        return new SpaceIntermediateModel
         {
             Id = space.Id,
             Name = space.Name,
@@ -62,10 +65,59 @@ public class Mapper
             lines.Add(new Line3D(new Point3D(current.X, current.Y, Z), new Point3D(next.X, next.Y, Z)));
         }
         return new Polyline3D(lines);
+    }
 
-        //
-        // var p = new Polyline3D();
-        // return new Line3D(new Point3D(lineString.StartPoint.X, lineString.StartPoint.Y, Z),
-        //     new Point3D(lineString.EndPoint.X, lineString.EndPoint.Y, Z));
+    public Ceiling ToCeiling(CeilingIntermediateModel ceilingIntermediate)
+    {
+        return new Ceiling
+        {
+            Area = ceilingIntermediate.Area,
+            Position = ceilingIntermediate.Position,
+            ThermalConductivity =  ceilingIntermediate.ThermalConductivity,
+            AdjacentSpaceNumber = ceilingIntermediate.Space?.Number,
+        };
+    }
+
+    public Space ToSpace(SpaceIntermediateModel spaceIntermediate)
+    {
+        return new Space
+        {
+            Number = spaceIntermediate.Number,
+            Name = spaceIntermediate.Name,
+            Temperature = spaceIntermediate.Temperature,
+            Walls = spaceIntermediate.Edges.SelectMany(x => x.Walls).Select(ToWall).ToList(),
+            FloorAreas = spaceIntermediate.Floor?.GetFloorAreas() ?? new List<FloorArea>(),
+            Ceilings = spaceIntermediate.Ceiling.Select(ToCeiling).ToList(),
+        };
+    }
+        
+    public Opening ToOpening(OpeningIntermediateModel openingIntermediate)
+    {
+        return new Opening
+        {
+            Name = openingIntermediate.Name,
+            Mark = openingIntermediate.Mark,
+            Width = openingIntermediate.Width,
+            Height = openingIntermediate.Height,
+            Type = openingIntermediate.Type,
+            BottomLevel =  openingIntermediate.BottomLevel,
+            ThermalConductivity =  openingIntermediate.ThermalConductivity,
+            CardinalDirection = openingIntermediate.CardinalDirection
+        };
+    }
+    
+    public Wall ToWall(WallIntermediateModel wallIntermediate)
+    {
+        return new Wall
+        {
+            Mark = wallIntermediate.Mark,
+            Position = wallIntermediate.Position,
+            Width = wallIntermediate.Width,
+            Height = wallIntermediate.Height,
+            AdjacentSpaceNumber = wallIntermediate.AdjacentSpace?.Number,
+            ThermalConductivity = wallIntermediate.ThermalConductivity,
+            Openings = wallIntermediate.Openings.Select(ToOpening).ToList(),
+            CardinalDirection = wallIntermediate.CardinalDirection
+        };
     }
 }

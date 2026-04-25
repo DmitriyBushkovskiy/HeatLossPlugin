@@ -1,4 +1,4 @@
-﻿namespace HeatLoss.Application;
+﻿namespace HeatLoss.Infrastructure.Common.Constants;
 
 public static class Constants
 {

@@ -5,6 +5,7 @@ using HeatLoss.Infrastructure.NanoCad.Extensions;
 using HeatLoss.Domain.Enums;
 using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
+using HeatLoss.Infrastructure.Common.Enums;
 using HeatLoss.Infrastructure.Common.Models;
 using HeatLoss.Infrastructure.NanoCad.Objects;
 using HostMgd.ApplicationServices;
@@ -26,11 +27,11 @@ public class NanoCadDataExtractor
     private readonly NanoCadMapper _nanoCadMapper;
     private readonly IParameterResolver _parameterResolver;
     
-    public NanoCadDataExtractor(Document document, NanoCadValidator nanoCadValidator)
+    public NanoCadDataExtractor(Document document)
     {
         _document = document;
         _editor = _document.Editor;
-        _nanoCadValidator = nanoCadValidator;
+        _nanoCadValidator = new NanoCadValidator(_document);
         _nanoCadMapper = new NanoCadMapper();
         _parameterResolver = new NanoCadParameterResolver();
     }

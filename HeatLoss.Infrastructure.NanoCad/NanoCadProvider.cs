@@ -17,8 +17,7 @@ public class NanoCadProvider: IBimProvider
     {
         var document = HostMgd.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
         _editor = document.Editor;
-        var validator = new NanoCadValidator(document);
-        _extractor = new NanoCadDataExtractor(document, validator);
+        _extractor = new NanoCadDataExtractor(document);
         ParameterResolver = new NanoCadParameterResolver();
         _writer = new NanoCadDataWriter(ParameterResolver);
     }

@@ -1,7 +1,6 @@
 ﻿using System.Globalization;
 using BIMStructureMgd.DatabaseObjects;
 using HeatLoss.Domain.Enums;
-using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.Common.Enums;
 using HeatLoss.Infrastructure.Common.Models;
