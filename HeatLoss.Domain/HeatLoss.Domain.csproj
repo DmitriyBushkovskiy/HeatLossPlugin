@@ -6,33 +6,4 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <ItemGroup>
-        <Reference Include="hostdbmgd">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\bin\hostdbmgd.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="hostmgd">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\bin\hostmgd.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="MapiBaseTypes">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\nanoSPDS\bin\MapiBaseTypes.dll</HintPath>
-        </Reference>
-        <Reference Include="mapimgd">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\nanoSPDS\bin\mapimgd.dll</HintPath>
-        </Reference>
-        <Reference Include="ncBIMSmgd">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD BIM Строительство x64 25.0\bin\ncBIMSmgd.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="NrxGateMgd">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\bin\nrxgatemgd.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-        <Reference Include="ncBIMParametricKit">
-            <HintPath>D:\NanoCadSDK\NCadBIMSDK\include-x64\ncBIMParametricKit.dll</HintPath>
-            <Private>False</Private>
-        </Reference>
-    </ItemGroup>
-
 </Project>

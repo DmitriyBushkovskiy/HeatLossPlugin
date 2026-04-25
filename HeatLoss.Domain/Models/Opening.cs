@@ -1,6 +1,6 @@
 ﻿using HeatLoss.Domain.Enums;
 
-namespace HeatLoss.Domain.Surfaces;
+namespace HeatLoss.Domain.Models;
 
 public class Opening
 {

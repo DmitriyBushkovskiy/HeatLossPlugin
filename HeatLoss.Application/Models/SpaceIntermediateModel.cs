@@ -1,5 +1,4 @@
-﻿using HeatLoss.Domain.Surfaces;
-using HeatLoss.Infrastructure.Common.DTO;
+﻿using HeatLoss.Infrastructure.Common.DTO;
 using NetTopologySuite.Geometries;
 
 namespace HeatLoss.Application.Models;

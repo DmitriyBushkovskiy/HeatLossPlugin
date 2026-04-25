@@ -1,4 +1,4 @@
-﻿namespace HeatLoss.Domain.Surfaces;
+﻿namespace HeatLoss.Domain.Models;
 
 public class Building
 {

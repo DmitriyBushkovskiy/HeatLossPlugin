@@ -1,4 +1,4 @@
-﻿using HeatLoss.Domain.Surfaces;
+﻿using HeatLoss.Domain.Models;
 
 namespace HeatLoss.Application.Models;
 

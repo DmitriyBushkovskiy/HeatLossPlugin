@@ -1,5 +1,4 @@
 ﻿using HeatLoss.Domain.Enums;
-using HeatLoss.Domain.Surfaces;
 using NetTopologySuite.Geometries;
 
 namespace HeatLoss.Application.Models;

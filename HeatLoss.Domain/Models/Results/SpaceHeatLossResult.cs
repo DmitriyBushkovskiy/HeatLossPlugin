@@ -1,4 +1,4 @@
-﻿namespace HeatLoss.Domain.Results;
+﻿namespace HeatLoss.Domain.Models.Results;
 
 public class SpaceHeatLossResult
 {

@@ -1,5 +1,4 @@
 ﻿using HeatLoss.Domain.Enums;
-using HeatLoss.Domain.Surfaces;
 using HeatLoss.Infrastructure.Common.DTO;
 using NetTopologySuite.Geometries;
 

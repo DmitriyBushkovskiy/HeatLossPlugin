@@ -1,7 +1,7 @@
 ﻿using System.Globalization;
 using HeatLoss.Application.Models;
-using HeatLoss.Domain.Results;
-using HeatLoss.Domain.Surfaces;
+using HeatLoss.Domain.Models;
+using HeatLoss.Domain.Models.Results;
 using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.Common.Enums;

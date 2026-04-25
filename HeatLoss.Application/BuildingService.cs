@@ -1,5 +1,5 @@
-﻿using HeatLoss.Domain.Results;
-using HeatLoss.Domain.Surfaces;
+﻿using HeatLoss.Domain.Models;
+using HeatLoss.Domain.Models.Results;
 using HeatLoss.Geometry;
 using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;

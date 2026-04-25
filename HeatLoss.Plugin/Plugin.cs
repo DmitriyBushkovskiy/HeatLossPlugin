@@ -2,8 +2,8 @@
 using HeatLoss.Calculations;
 using HeatLoss.Infrastructure.NanoCad;
 using HeatLoss.Domain.Enums;
-using HeatLoss.Domain.Results;
-using HeatLoss.Domain.Surfaces;
+using HeatLoss.Domain.Models;
+using HeatLoss.Domain.Models.Results;
 using HeatLoss.Reports;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;

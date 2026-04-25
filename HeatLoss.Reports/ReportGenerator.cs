@@ -3,7 +3,7 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using HeatLoss.Domain.Enums;
 using HeatLoss.Domain.Extensions;
-using HeatLoss.Domain.Results;
+using HeatLoss.Domain.Models.Results;
 using HeatLoss.Reports.Extensions;
 using HeatLoss.Reports.Styles;
 

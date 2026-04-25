@@ -1,6 +1,6 @@
 ﻿using HeatLoss.Domain.Enums;
 
-namespace HeatLoss.Domain.Results;
+namespace HeatLoss.Domain.Models.Results;
 
 public class SurfaceHeatLossResult: IEquatable<SurfaceHeatLossResult>
 {
