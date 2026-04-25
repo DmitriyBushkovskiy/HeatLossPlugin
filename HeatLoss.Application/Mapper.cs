@@ -120,4 +120,9 @@ public class Mapper
             CardinalDirection = wallIntermediate.CardinalDirection
         };
     }
+    
+    public NetTopologySuite.Mathematics.Vector2D ToVector2D(Vector2D vector)
+    {
+        return new NetTopologySuite.Mathematics.Vector2D(vector.X, vector.Y);
+    }
 }

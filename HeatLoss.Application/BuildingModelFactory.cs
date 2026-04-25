@@ -15,7 +15,6 @@ public class BuildingModelFactory
 {
     private readonly HeatLossGeometry _geometry;
     private readonly Mapper _mapper;
-    private readonly GeometryService _geometryService;
     private readonly Validator _validator;
     private readonly IParameterResolver _parameterResolver;
     
@@ -26,7 +25,6 @@ public class BuildingModelFactory
         _geometry = geometry;
         _parameterResolver = bimProvider.ParameterResolver;
         _mapper = new Mapper(_parameterResolver);
-        _geometryService =  new GeometryService(bimProvider.ParameterResolver);
         _validator = new Validator(bimProvider);
     }
 
@@ -78,7 +76,8 @@ public class BuildingModelFactory
                 // находим стену, которой принадлежит граница помещения
                 foreach (var nanocadWall in possibleWalls)
                 {
-                    var intersection = _geometryService.GetPolygon(nanocadWall).Intersection(spaceEdge.LineString);    
+                    var axis = Enum.Parse<EntityAxis>(nanocadWall.Parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.PartAxis)).Value ?? string.Empty);
+                    var intersection = _geometry.GetPolygon(nanocadWall, axis).Intersection(spaceEdge.LineString);    
                     // проверяем что есть пересечение, и это не пересечение с торцом стены
                     if (Math.Round(intersection.Length) > 0 && Math.Abs(nanocadWall.Thickness - intersection.Length) > 1) 
                     {
@@ -93,7 +92,8 @@ public class BuildingModelFactory
                 
                 foreach (var nanocadOpening in possibleOpenings)
                 {
-                    var intersection = _geometryService.GetPolygon(nanocadOpening).Intersection(spaceEdge.LineString);    
+                    var axis = Enum.Parse<EntityAxis>(nanocadOpening.Parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.PartAxis)).Value ?? string.Empty);
+                    var intersection = _geometry.GetPolygon(nanocadOpening, axis).Intersection(spaceEdge.LineString);    
                     if (Math.Round(intersection.Length) > 0) 
                     {
                         spaceEdge.ModelOpenings.Add(nanocadOpening);
@@ -151,6 +151,7 @@ public class BuildingModelFactory
             {
                 var edge = space.Edges[i];
                 var modelWall = edge.ModelWall!;
+                var axis = Enum.Parse<EntityAxis>(modelWall.Parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.PartAxis)).Value ?? string.Empty);
                 if (modelWall.Position == SurfacePosition.Outside)
                 {
                     var prevEdge = space.Edges[i == 0 ? space.Edges.Count - 1 : i - 1];
@@ -166,7 +167,7 @@ public class BuildingModelFactory
                         Height = space.Height,
                         BottomLevel = space.BottomLevel,
                         ThermalConductivity = materialsThermalConductivity[modelWall.GetParameter(materialIdParameterName)],
-                        CardinalDirection = GetCardinalDirection(cardinalDirections, edge.LineString, _geometryService.GetPolygon(modelWall))
+                        CardinalDirection = GetCardinalDirection(cardinalDirections, edge.LineString, _geometry.GetPolygon(modelWall, axis))
                     };
                     edge.Walls.Add(wall);
                 }
@@ -235,7 +236,8 @@ public class BuildingModelFactory
                         .ToList();
                     foreach (var opening in possibleOpenings)
                     {
-                        var openingPolygon = _geometryService.GetPolygon(opening);
+                        var axis = Enum.Parse<EntityAxis>(opening.Parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.PartAxis)).Value ?? string.Empty);
+                        var openingPolygon = _geometry.GetPolygon(opening, axis);
                         var intersection = wall.Polygon.Intersection(openingPolygon);
                         if (!intersection.IsEmpty)
                         {
@@ -356,7 +358,7 @@ public class BuildingModelFactory
                     {
                         foreach (var slab in anotherSlabs)
                         {
-                            var slabIntersection = floorIntersection.Intersection(_geometryService.GetPolygon(slab));
+                            var slabIntersection = floorIntersection.Intersection(_geometry.GetPolygon(slab));
                             if (!slabIntersection.IsEmpty && slabIntersection.Area > 0)
                             {
                                 var ceiling = new CeilingIntermediateModel
@@ -378,7 +380,7 @@ public class BuildingModelFactory
                 {
                     foreach (var slab in anotherSlabs)
                     {
-                        var slabIntersection = currentSpace.GetPolygon().Intersection(_geometryService.GetPolygon(slab));
+                        var slabIntersection = currentSpace.GetPolygon().Intersection(_geometry.GetPolygon(slab));
                         if (!slabIntersection.IsEmpty && slabIntersection.Area > 0)
                         {
                             var topCeiling = new CeilingIntermediateModel
@@ -413,7 +415,7 @@ public class BuildingModelFactory
         var cardinalDirection = CardinalDirection.N;
         foreach (var pair in cardinalDirections)
         {
-            var r = Math.Abs(vect.AngleTo(_geometryService.ToVector2D(pair.Value)));
+            var r = Math.Abs(vect.AngleTo(_mapper.ToVector2D(pair.Value)));
             if (r < minAngle)
             {
                 minAngle = r;
