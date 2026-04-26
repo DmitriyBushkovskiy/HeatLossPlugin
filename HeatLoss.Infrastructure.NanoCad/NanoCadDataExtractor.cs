@@ -154,6 +154,8 @@ public class NanoCadDataExtractor
         Utilities.AddEntityToDatabase(db, tr, box);
         
         tr.Commit();
+        
+        _editor.WriteMessage("Создан объект данных проекта. Укажите расчетные параметры.");
     }
     
     private ParametricEntity? FindProjectData()

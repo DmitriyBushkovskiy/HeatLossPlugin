@@ -19,6 +19,7 @@ public class HeatLossCalculator
                 Name = space.Name,
                 Temperature = space.Temperature
             };
+            var isCornerSpace = space.Walls.Count(x => x.Position == SurfacePosition.Outside) > 1;
             foreach (var wall in space.Walls.OrderByDescending(x => x.Position).ThenBy(x => x.AdjacentSpaceNumber))
             {
                 var temperatureDifference = space.Temperature 
@@ -26,7 +27,7 @@ public class HeatLossCalculator
                                                 ? building.OutsideTemperature 
                                                 : spaceTemperatures[wall.AdjacentSpaceNumber!]);
 
-                var surfacesResult = CalculateWall(wall, temperatureDifference);
+                var surfacesResult = CalculateWall(wall, temperatureDifference, isCornerSpace);
                 spaceHeatLossResult.Surfaces.AddRange(surfacesResult);
                 
                 if (wall.Position == SurfacePosition.Inside)
@@ -90,12 +91,12 @@ public class HeatLossCalculator
         return buildingHeatLossResult;
     }
 
-    private List<SurfaceHeatLossResult> CalculateWall(Wall wall, double temperatureDifference)
+    private List<SurfaceHeatLossResult> CalculateWall(Wall wall, double temperatureDifference, bool isCornerSpace)
     {
-        var result = wall.Openings.Select(x => CalculateOpening(x, temperatureDifference)).ToList();
+        var result = wall.Openings.Select(x => CalculateOpening(x, temperatureDifference, isCornerSpace)).ToList();
         var wallArea = Math.Round((wall.Width * wall.Height - wall.Openings.Sum(x => x.Height * x.Width))/1_000_000, 2);
         var heatTransferCoefficient = GetHeatTransferCoefficient(wall.ThermalConductivity);
-        var additionalCoefficient = 1 + (wall.CardinalDirection?.GetCoefficient() ?? 0.0);
+        var additionalCoefficient = 1 + (wall.CardinalDirection?.GetCoefficient() ?? 0.0) + (isCornerSpace && wall.Position == SurfacePosition.Outside ? 0.05 : 0);
         result.Insert(0,
             new SurfaceHeatLossResult
             {
@@ -117,11 +118,12 @@ public class HeatLossCalculator
         return result;
     }
     
-    SurfaceHeatLossResult CalculateOpening(Opening opening, double temperatureDifference)
+    SurfaceHeatLossResult CalculateOpening(Opening opening, double temperatureDifference, bool isCornerSpace)
     {
         var area = Math.Round(opening.Width * opening.Height / 1_000_000, 2);
         var heatTransferCoefficient = GetHeatTransferCoefficient(opening.ThermalConductivity);
-        var additionalCoefficient = 1 + (opening.CardinalDirection?.GetCoefficient() ?? 0.0);
+        var position = opening.CardinalDirection == null ? SurfacePosition.Inside : SurfacePosition.Outside;
+        var additionalCoefficient = 1 + (opening.CardinalDirection?.GetCoefficient() ?? 0.0) + (isCornerSpace && position == SurfacePosition.Outside ? 0.05 : 0);
         return new SurfaceHeatLossResult
         {
             Name = opening.Name,
@@ -129,6 +131,7 @@ public class HeatLossCalculator
             Width = opening.Width,
             Height = opening.Height,
             Area = area,
+            Position = position,
             Type = GetSurfaceTypeForOpening(opening.Type),
             TemperatureDifference = temperatureDifference,
             ThermalConductivity = opening.ThermalConductivity,
