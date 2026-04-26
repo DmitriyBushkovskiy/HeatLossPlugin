@@ -46,7 +46,7 @@ public class ReportGenerator
             
             // Набор стилей
             var workbookStylesPart = workbookPart.AddNewPart<WorkbookStylesPart>();
-            workbookStylesPart.Stylesheet = StylesheetGenerator.GenerateStyleSheet();
+            workbookStylesPart.Stylesheet = StylesheetFactory.CreateStylesheet();
             workbookStylesPart.Stylesheet.Save();
 
             CreateColumns(worksheetPart);

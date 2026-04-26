@@ -3,9 +3,9 @@ using HeatLoss.Reports.Styles.CustomStyles;
 
 namespace HeatLoss.Reports.Styles;
 
-public static class StylesheetGenerator
+public static class StylesheetFactory
 {
-    public static Stylesheet GenerateStyleSheet()
+    public static Stylesheet CreateStylesheet()
     {
         return new Stylesheet(
             // шрифты
