@@ -15,4 +15,11 @@ public enum ParameterKey
     PartAxis,
     SpaceTemperature,
     SpaceHeatLoss,
+    NominalRoomPressure,
+    BuildingHeight,
+    WindSpeed,
+    WindwardAerodynamicCoefficient,
+    DownwindAerodynamicCoefficient,
+    WindPressureCoefficient,
+    AirPermeabilityResistance
 }

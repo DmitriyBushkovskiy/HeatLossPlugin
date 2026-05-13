@@ -42,7 +42,7 @@ public class NanoCadMapper
     public LinearWallDto ToWallDto(LinearBuildingWall wall)
     {
         var parameters = wall.GetElementData().Parameters
-            .Select(x => new HeatLoss.Infrastructure.Common.Models.Parameter(x.Name, x.Value))
+            .Select(x => new Parameter(x.Name, x.Value))
             .ToList();
         
         return new LinearWallDto
@@ -129,6 +129,11 @@ public class NanoCadMapper
             SecondFloorAreaThermalConductivity = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.SecondFloorAreaConductivity)), NumberStyles.Any, CultureInfo.InvariantCulture),
             ThirdFloorAreaThermalConductivity = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.ThirdFloorAreaConductivity)), NumberStyles.Any, CultureInfo.InvariantCulture),
             FourthFloorAreaThermalConductivity = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.FourthFloorAreaConductivity)), NumberStyles.Any, CultureInfo.InvariantCulture),
+            BuildingHeight = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.BuildingHeight)), NumberStyles.Any, CultureInfo.InvariantCulture),
+            WindSpeed = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.WindSpeed)), NumberStyles.Any, CultureInfo.InvariantCulture),
+            WindwardAerodynamicCoefficient = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.WindwardAerodynamicCoefficient)), NumberStyles.Any, CultureInfo.InvariantCulture),
+            DownwindAerodynamicCoefficient = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.DownwindAerodynamicCoefficient)), NumberStyles.Any, CultureInfo.InvariantCulture),
+            WindPressureCoefficient = double.Parse(projectData.GetParameter(_parameterResolver.GetParameterName(ParameterKey.WindPressureCoefficient)), NumberStyles.Any, CultureInfo.InvariantCulture),
         };
     }
 }

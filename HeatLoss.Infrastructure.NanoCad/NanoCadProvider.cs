@@ -12,10 +12,12 @@ public class NanoCadProvider: IBimProvider
     private readonly NanoCadDataWriter _writer;
     private readonly NanoCadDataExtractor _extractor;
     public IParameterResolver ParameterResolver { get; set; }
+    public string DocumentPath { get; }
 
     public NanoCadProvider()
     {
         var document = HostMgd.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+        DocumentPath = document.Name;
         _editor = document.Editor;
         _extractor = new NanoCadDataExtractor(document);
         ParameterResolver = new NanoCadParameterResolver();

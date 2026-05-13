@@ -14,6 +14,7 @@ public class SpaceIntermediateModel
     public double BottomLevel  { get; init; }
     public double Height { get; init; }
     public double Temperature { get; init; }
+    public double NominalRoomPressure { get; init; }
     
     public Polygon GetPolygon()
     {

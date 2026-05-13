@@ -10,4 +10,11 @@ public static class CustomAlignments
         Vertical = VerticalAlignmentValues.Center,
         WrapText = true
     };
+    
+    public static Alignment GetCenterLeftAlignment()
+        => new() {
+            Horizontal = HorizontalAlignmentValues.Left,
+            Vertical = VerticalAlignmentValues.Center,
+            WrapText = false
+        };
 }

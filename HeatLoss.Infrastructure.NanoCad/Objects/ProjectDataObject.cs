@@ -26,6 +26,11 @@ public class ProjectDataObject : EntitySource<ProjectDataSpecification>
             FloorAreaTwoThermalConductivity = 4.3;
             FloorAreaThreeThermalConductivity = 8.6;
             FloorAreaFourThermalConductivity = 14.2;
+            BuildingHeight = 0;
+            WindSpeed = -1;
+            WindwardAerodynamicCoefficient = 0.8;
+            DownwindAerodynamicCoefficient = -0.6;
+            WindPressureCoefficient = -1;
         }
 
         [ParameterDefinition("HL_OUTSIDE_TEMPERATURE", "Температура наружного воздуха, °С")]
@@ -42,6 +47,21 @@ public class ProjectDataObject : EntitySource<ProjectDataSpecification>
         
         [ParameterDefinition("HL_FLOOR_AREA4_THERMAL_CONDUCTIVITY", "Сопротивление теплопередаче 4 зоны пола, м²∙°С/Вт")]
         public SpecificationParameter FloorAreaFourThermalConductivity { get; set; }
+                
+        [ParameterDefinition("HL_BUILDING_HEIGHT", "Высота здания (от уровня пола первого этажа до верха вытяжной шахты), м")]
+        public SpecificationParameter BuildingHeight { get; set; }
+        
+        [ParameterDefinition("HL_WIND_SPEED", "Расчетная скорость ветра в холодный период года, м/с")]
+        public SpecificationParameter WindSpeed { get; set; }
+        
+        [ParameterDefinition("HL_AERODYNAMIC_COEFFICIENT_WINDWARD", "Аэродинамический коэффициент для наветренной поверхности ограждений здания")]
+        public SpecificationParameter WindwardAerodynamicCoefficient  { get; set; }
+        
+        [ParameterDefinition("HL_AERODYNAMIC_COEFFICIENT_DOWNWIND", "Аэродинамический коэффициент для подветренной поверхности ограждений здания")]
+        public SpecificationParameter DownwindAerodynamicCoefficient { get; set; }
+        
+        [ParameterDefinition("HL_WIND_PRESSURE_COEFFICIENT", "Коэффициент учета изменения скоростного давления ветра")]
+        public SpecificationParameter WindPressureCoefficient { get; set; }
     }
 
     public class ProjectDataView2D : EntityView2D<ProjectDataObject>

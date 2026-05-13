@@ -6,7 +6,6 @@ using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.Common.Enums;
 using HeatLoss.Infrastructure.Common.Models;
-using NetTopologySuite.Algorithm;
 using NetTopologySuite.Geometries;
 
 namespace HeatLoss.Application;
@@ -31,6 +30,9 @@ public class Mapper
             Height = space.Height,
             Temperature = double.TryParse(space.Parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.SpaceTemperature)).Value, NumberStyles.Any , CultureInfo.InvariantCulture, out var temperature)
                 ? temperature
+                : 0,
+            NominalRoomPressure = double.TryParse(space.Parameters.FirstOrDefault(x => x.Name == _parameterResolver.GetParameterName(ParameterKey.NominalRoomPressure)).Value, NumberStyles.Any , CultureInfo.InvariantCulture, out var nominalRoomPressure)
+                ? nominalRoomPressure
                 : 0,
         };
     }
@@ -90,6 +92,20 @@ public class Mapper
             Ceilings = spaceIntermediate.Ceiling.Select(ToCeiling).ToList(),
         };
     }
+    
+    public Building ToBuilding(BuildingIntermediateModel buildingIntermediate, ProjectDataDto projectData)
+    {
+        return new Building
+        {
+            OutsideTemperature = projectData.OutsideTemperature,
+            BuildingHeight = projectData.BuildingHeight,
+            WindSpeed = projectData.WindSpeed,
+            WindPressureCoefficient =  projectData.WindPressureCoefficient,
+            WindwardAerodynamicCoefficient = projectData.WindwardAerodynamicCoefficient,
+            DownwindAerodynamicCoefficient = projectData.DownwindAerodynamicCoefficient,
+            Spaces = buildingIntermediate.Spaces.Select(ToSpace).ToList(),
+        };
+    }
         
     public Opening ToOpening(OpeningIntermediateModel openingIntermediate)
     {
@@ -102,6 +118,7 @@ public class Mapper
             Type = openingIntermediate.Type,
             BottomLevel =  openingIntermediate.BottomLevel,
             ThermalConductivity =  openingIntermediate.ThermalConductivity,
+            AirPermeabilityResistance = openingIntermediate.AirPermeabilityResistance,
             CardinalDirection = openingIntermediate.CardinalDirection
         };
     }

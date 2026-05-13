@@ -12,4 +12,5 @@ public class Opening
     public double ThermalConductivity  { get; init; }
     public OpeningType Type { get; init; }
     public CardinalDirection? CardinalDirection { get; init; }
+    public double AirPermeabilityResistance { get; init; } //R
 }

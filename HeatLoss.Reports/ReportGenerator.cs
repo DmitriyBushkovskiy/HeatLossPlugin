@@ -13,19 +13,19 @@ public class ReportGenerator
 {
     private readonly LengthMeasurementUnit _lengthMeasurementUnit;
     private readonly bool _combineSimilarSurfaces;
+    private readonly string _reportFilePath;
     
     
     public ReportGenerator(ReportGeneratorOptions options)
     {
         _lengthMeasurementUnit = options.LengthMeasurementUnit;
         _combineSimilarSurfaces = options.CombineSimilarSurfaces;
+        _reportFilePath = options.ReportFilePath;
     }
 
     public void GenerateReport(BuildingHeatLossResult buildingHeatLossResult)
     {
-        var now = DateTime.Now;
-        string filePath = $"D:\\foo\\HeatLossReport-{now.ToString().Replace(':', '_')}.xlsx";
-        CreateExcelFile(filePath, buildingHeatLossResult);
+        CreateExcelFile(_reportFilePath, buildingHeatLossResult);
     }
 
     private void CreateExcelFile(string filePath, BuildingHeatLossResult result)
@@ -81,17 +81,19 @@ public class ReportGenerator
             needToInsertColumns = true;
         }
             
-        columns.Append(new Column { Min = 1, Max = 15, Width = 15, CustomWidth = true }); //Сторона света
-        columns.Append(new Column { Min = 2, Max = 15, Width = 30, CustomWidth = true }); //Название конструкции
-        columns.Append(new Column { Min = 3, Max = 15, Width = 12, CustomWidth = true }); //Ширина
-        columns.Append(new Column { Min = 4, Max = 15, Width = 12, CustomWidth = true }); //Высота
-        columns.Append(new Column { Min = 5, Max = 15, Width = 15, CustomWidth = true }); //Количество
-        columns.Append(new Column { Min = 6, Max = 15, Width = 12, CustomWidth = true }); //Площадь
-        columns.Append(new Column { Min = 7, Max = 15, Width = 12, CustomWidth = true }); //R
-        columns.Append(new Column { Min = 8, Max = 15, Width = 12, CustomWidth = true }); //K
-        columns.Append(new Column { Min = 9, Max = 15, Width = 12, CustomWidth = true }); //Разность температур
-        columns.Append(new Column { Min = 10, Max = 15, Width = 15, CustomWidth = true }); //Коэффициент
-        columns.Append(new Column { Min = 11, Max = 15, Width = 15, CustomWidth = true }); //Теплопотери
+        columns.Append(new Column { Min = 1, Max = 15, Width = 10, CustomWidth = true }); //Сторона света
+        columns.Append(new Column { Min = 2, Max = 15, Width = 25, CustomWidth = true }); //Название конструкции
+        columns.Append(new Column { Min = 3, Max = 15, Width = 10, CustomWidth = true }); //Ширина
+        columns.Append(new Column { Min = 4, Max = 15, Width = 9, CustomWidth = true }); //Высота
+        columns.Append(new Column { Min = 5, Max = 15, Width = 7, CustomWidth = true }); //Количество
+        columns.Append(new Column { Min = 6, Max = 15, Width = 11, CustomWidth = true }); //Площадь
+        columns.Append(new Column { Min = 7, Max = 15, Width = 9, CustomWidth = true }); //R
+        columns.Append(new Column { Min = 8, Max = 15, Width = 11, CustomWidth = true }); //K
+        columns.Append(new Column { Min = 9, Max = 15, Width = 6, CustomWidth = true }); //Разность температур
+        columns.Append(new Column { Min = 10, Max = 15, Width = 11, CustomWidth = true }); //Коэффициент
+        columns.Append(new Column { Min = 11, Max = 15, Width = 15, CustomWidth = true }); //Трансмиссионные теплопотери
+        columns.Append(new Column { Min = 12, Max = 15, Width = 15, CustomWidth = true }); //Инфильтрационные теплопотери
+        columns.Append(new Column { Min = 13, Max = 15, Width = 15, CustomWidth = true }); //Суммарные теплопотери
             
         if (needToInsertColumns)
             worksheetPart.Worksheet.InsertAt(columns, 0);
@@ -109,7 +111,7 @@ public class ReportGenerator
         
         // Стиль для шапки таблицы
         foreach (var row in new[]{firstRow, secondRow, thirdRow})
-            for (char i = 'A'; i <= 'K'; i++)
+            for (char i = 'A'; i <= 'M'; i++)
                 InsertCell(row, i.ToString(), styleIndex: 1);
         
         // Объединение ячеек
@@ -120,7 +122,7 @@ public class ReportGenerator
         foreach (var c in new []{'B', 'E', 'F', 'G', 'H'})
             mergeCells.Append(new MergeCell { Reference = new StringValue($"{c}2:{c}3") });
         
-        foreach (var c in new []{'A', 'I', 'J', 'K'})
+        foreach (var c in new []{'A', 'I', 'J', 'K', 'L', 'M'})
             mergeCells.Append(new MergeCell { Reference = new StringValue($"{c}1:{c}3") });
         
         worksheetPart.Worksheet.InsertAfter(mergeCells, sheetData);
@@ -132,13 +134,15 @@ public class ReportGenerator
         sheetData.SetValueToCell("C2", $"Размеры, {_lengthMeasurementUnit.ToShortString()}");
         sheetData.SetValueToCell("C3", "Ширина");
         sheetData.SetValueToCell("D3", "Высота");
-        sheetData.SetValueToCell("E2", "Количество");
+        sheetData.SetValueToCell("E2", "Кол-во");
         sheetData.SetValueToCell("F2", "Площадь, м²");
         sheetData.SetValueToCell("G2", "R, м²∙°С/Вт");
         sheetData.SetValueToCell("H2", "K, Вт/(м²∙°С)");
-        sheetData.SetValueToCell("I1", "Разность температур, °С");
-        sheetData.SetValueToCell("J1", "Поправочный коэффициент");
-        sheetData.SetValueToCell("K1", "Теплопотери, Вт");
+        sheetData.SetValueToCell("I1", "Δt, °С");
+        sheetData.SetValueToCell("J1", "Поправочный коэф.");
+        sheetData.SetValueToCell("K1", "Трансм. теплопотери, Вт");
+        sheetData.SetValueToCell("L1", "Инфильтр. теплопотери, Вт");
+        sheetData.SetValueToCell("M1", "Суммарные теплопотери, Вт");
         
         // закрепляем шапку таблицы
         var worksheet = worksheetPart.Worksheet;
@@ -209,8 +213,9 @@ public class ReportGenerator
         var row = new Row { RowIndex = rowIndex };
         sheetData.Append(row);
         
-        for (var i = 'A'; i <= 'K'; i++)
+        for (var i = 'A'; i <= 'M'; i++)
             InsertCell(row, i.ToString(), styleIndex: 2);
+        InsertCell(row, "N", styleIndex: 4);
         
         sheetData.SetValueToCell($"A{rowIndex}", surfaceHeatLossResult.CardinalDirection?.ToShortString() ?? string.Empty); //Сторона света
         sheetData.SetValueToCell($"B{rowIndex}", GetSurfaceType(surfaceHeatLossResult)); //Тип
@@ -222,7 +227,12 @@ public class ReportGenerator
         sheetData.SetValueToCell($"H{rowIndex}", surfaceHeatLossResult.HeatTransferCoefficient); //K
         sheetData.SetValueToCell($"I{rowIndex}", surfaceHeatLossResult.TemperatureDifference); //Разность температур
         sheetData.SetValueToCell($"J{rowIndex}", surfaceHeatLossResult.AdditionalCoefficient); // Поправочный коэффициент
-        sheetData.SetValueToCell($"K{rowIndex}", surfaceHeatLossResult.HeatLoss * amount); //Теплопотери
+        sheetData.SetValueToCell($"K{rowIndex}", surfaceHeatLossResult.TransmissionHeatLoss * amount); //Трансмиссионные теплопотери
+        sheetData.SetValueToCell($"L{rowIndex}", surfaceHeatLossResult.InfiltrationHeatLoss * amount); //Инфильтрационные теплопотери
+        sheetData.SetValueToCell($"M{rowIndex}", surfaceHeatLossResult.TotalHeatLoss * amount); //Суммарные теплопотери
+        
+        // if (surfaceHeatLossResult.InfiltrationHeatLossCalculation != null)
+        //     sheetData.SetValueToCell($"N{rowIndex}", surfaceHeatLossResult.InfiltrationHeatLossCalculation); //Суммарные теплопотери
         
         rowIndex++;
     }
@@ -233,15 +243,15 @@ public class ReportGenerator
         var row = new Row { RowIndex = rowIndex };
         sheetData.Append(row);
         
-        for (var i = 'A'; i <= 'J'; i++)
+        for (var i = 'A'; i <= 'L'; i++)
             InsertCell(row, i.ToString(), styleIndex: 3);
-        InsertCell(row, "K", styleIndex: 1);
+        InsertCell(row, "M", styleIndex: 1);
         
         var mergeCells = worksheetPart.Worksheet.Elements<MergeCells>().First();
-        mergeCells.Append(new MergeCell { Reference = new StringValue($"A{rowIndex}:J{rowIndex}") });
+        mergeCells.Append(new MergeCell { Reference = new StringValue($"A{rowIndex}:L{rowIndex}") });
         
         sheetData.SetValueToCell($"A{rowIndex}", spaceName);
-        sheetData.SetValueToCell($"K{rowIndex}", totalHeatLoss);
+        sheetData.SetValueToCell($"M{rowIndex}", totalHeatLoss);
         
         rowIndex++;
     }
