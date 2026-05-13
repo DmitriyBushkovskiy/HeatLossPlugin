@@ -15,7 +15,10 @@ public class SurfaceHeatLossResult: IEquatable<SurfaceHeatLossResult>
     public string? AdjacentSpaceNumber  { get; init; }
     public string Comment { get; set; } = string.Empty;
     public double TemperatureDifference { get; init; }
-    public double HeatLoss { get; init; }
+    public double TransmissionHeatLoss { get; set; }
+    public double InfiltrationHeatLoss { get; set; }
+    public string? InfiltrationHeatLossCalculation { get; set; }
+    public double TotalHeatLoss { get; init; }
     public double ThermalConductivity  { get; init; } // Коэффициент R
     public double HeatTransferCoefficient  { get; init; } // Коэффициент K = 1/R
     public double AdditionalCoefficient { get; set; } = 1.0;
@@ -33,14 +36,14 @@ public class SurfaceHeatLossResult: IEquatable<SurfaceHeatLossResult>
                CardinalDirection == other.CardinalDirection &&
                Math.Abs(Area - other.Area) < 0.01 && 
                Math.Abs(TemperatureDifference - other.TemperatureDifference) < 0.01 && 
-               Math.Abs(HeatLoss - other.HeatLoss) < 0.01;
+               Math.Abs(TotalHeatLoss - other.TotalHeatLoss) < 0.01;
     }
 
     public override bool Equals(object? obj) => Equals(obj as SurfaceHeatLossResult);
 
     public override int GetHashCode()
     {
-        return HashCode.Combine(Type, Position, Area, TemperatureDifference, HeatLoss, AdjacentSpaceNumber, CardinalDirection);
+        return HashCode.Combine(Type, Position, Area, TemperatureDifference, TotalHeatLoss, AdjacentSpaceNumber, CardinalDirection);
     }
     
     public static bool operator ==(SurfaceHeatLossResult? left, SurfaceHeatLossResult? right)

@@ -20,6 +20,13 @@ public class NanoCadParameterResolver: IParameterResolver
         { ParameterKey.PartAxis, "AEC_PART_AXIS" },
         { ParameterKey.SpaceTemperature, "HL_SPACE_TEMPERATURE" },
         { ParameterKey.SpaceHeatLoss, "HL_HEAT_LOSS" },
+        { ParameterKey.NominalRoomPressure, "HL_NOMINAL_ROOM_PRESSURE" },
+        { ParameterKey.BuildingHeight, "HL_BUILDING_HEIGHT" },
+        { ParameterKey.WindSpeed, "HL_WIND_SPEED" },
+        { ParameterKey.WindwardAerodynamicCoefficient, "HL_AERODYNAMIC_COEFFICIENT_WINDWARD" },
+        { ParameterKey.DownwindAerodynamicCoefficient, "HL_AERODYNAMIC_COEFFICIENT_DOWNWIND" },
+        { ParameterKey.WindPressureCoefficient, "HL_WIND_PRESSURE_COEFFICIENT" },
+        { ParameterKey.AirPermeabilityResistance, "HL_AIR_PERMEABILITY_RESISTANCE" },
     };
     
     public string GetParameterName(ParameterKey key)

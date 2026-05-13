@@ -6,4 +6,5 @@ public class ReportGeneratorOptions
 {
     public LengthMeasurementUnit LengthMeasurementUnit  { get; init; }
     public bool CombineSimilarSurfaces { get; init; } = true;
+    public string ReportFilePath { get; set; } = null!;
 }

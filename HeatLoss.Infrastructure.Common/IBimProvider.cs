@@ -7,6 +7,7 @@ namespace HeatLoss.Infrastructure.Common;
 public interface IBimProvider
 {
     IParameterResolver ParameterResolver { get; }
+    string DocumentPath { get; }
     BimExtractedData ExtractBuildingData();
     void SaveHeatLossToModel(BuildingHeatLossResultDto heatLossResult);
     void WriteMessage(string message);

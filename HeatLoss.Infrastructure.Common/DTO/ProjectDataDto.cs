@@ -7,4 +7,9 @@ public class ProjectDataDto
     public double SecondFloorAreaThermalConductivity { get; init; }
     public double ThirdFloorAreaThermalConductivity { get; init; }
     public double FourthFloorAreaThermalConductivity { get; init; }
+    public double BuildingHeight { get; init; }
+    public double WindSpeed { get; init; }
+    public double WindwardAerodynamicCoefficient { get; init; }
+    public double DownwindAerodynamicCoefficient { get; init; }
+    public double WindPressureCoefficient { get; init; }
 }

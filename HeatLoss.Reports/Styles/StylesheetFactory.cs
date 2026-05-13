@@ -60,6 +60,14 @@ public static class StylesheetFactory
                     FontId = 1,
                     FillId = 0,
                     BorderId = 2,
+                },
+                // 4 - Комментарий
+                new CellFormat(CustomAlignments.GetCenterLeftAlignment())
+                {
+                    FontId = 1,
+                    FillId = 0,
+                    BorderId = 0,
+                    ApplyAlignment = true
                 }
             )
         );

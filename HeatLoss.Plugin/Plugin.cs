@@ -5,10 +5,7 @@ using HeatLoss.Domain.Enums;
 using HeatLoss.Domain.Models;
 using HeatLoss.Domain.Models.Results;
 using HeatLoss.Reports;
-using HostMgd.ApplicationServices;
-using HostMgd.EditorInput;
 using Teigha.Runtime;
-using Exception = System.Exception;
 
 namespace HeatLoss.Plugin;
 
@@ -21,29 +18,30 @@ public class Plugin
     public void CalculateHeatLoss()
     {
         var bimProvider = new NanoCadProvider();
-        try
-        {
-            var buildingProvider = new BuildingService(bimProvider);
-            _building = buildingProvider.CreateBuilding();
-        
-            var calculator = new HeatLossCalculator();
-            _buildingHeatLossResult = calculator.Calculate(_building);
-            
-            buildingProvider.SaveHeatLossToModel(_buildingHeatLossResult);
+        var buildingProvider = new BuildingService(bimProvider);
+        _building = buildingProvider.CreateBuilding();
 
-            var options = new ReportGeneratorOptions
-            {
-                LengthMeasurementUnit = LengthMeasurementUnit.Meter
-            };
-        
-            var reportGenerator = new ReportGenerator(options);
-            reportGenerator.GenerateReport(_buildingHeatLossResult);
-            bimProvider.WriteMessage("Отчет сформирован!");
-        }
-        catch (Exception)
+        var calculator = new HeatLossCalculator();
+        _buildingHeatLossResult = calculator.Calculate(_building);
+
+        buildingProvider.SaveHeatLossToModel(_buildingHeatLossResult);
+
+        var options = new ReportGeneratorOptions
         {
-            bimProvider.WriteMessage("Произошла ошибка во время расчета. Повторите команду");
-            throw;
-        }
+            LengthMeasurementUnit = LengthMeasurementUnit.Meter,
+            ReportFilePath = GetReportPath(bimProvider.DocumentPath)
+        };
+
+        var reportGenerator = new ReportGenerator(options);
+        reportGenerator.GenerateReport(_buildingHeatLossResult);
+        bimProvider.WriteMessage($"Отчет сформирован: {options.ReportFilePath}");
+    }
+
+    private string GetReportPath(string documentPath)
+    {
+        var now = DateTime.Now;
+        var directoryName = Path.GetDirectoryName(documentPath);
+        var fileName = Path.GetFileNameWithoutExtension(documentPath);
+        return Path.Combine(directoryName, $"{fileName} - теплопотери {now:yyyy.MM.dd HH_mm_ss}.xlsx");
     }
 }

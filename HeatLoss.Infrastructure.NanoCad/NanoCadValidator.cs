@@ -40,6 +40,21 @@ public class NanoCadValidator
         {
             throw new ValidationException("Установите температуру наружного воздуха в параметрах проекта (ProjectData)");
         }
+        
+        if (projectData.BuildingHeight <= 0)
+        {
+            throw new ValidationException("Укажите высоту здания в параметрах проекта (ProjectData)");
+        }
+        
+        if (projectData.WindSpeed < 0)
+        {
+            throw new ValidationException("Укажите расчетную скорость ветра в холодный период года в параметрах проекта (ProjectData)");
+        }
+        
+        if (projectData.WindPressureCoefficient < 0)
+        {
+            throw new ValidationException("Укажите коэффициент учета изменения скоростного давления ветра в параметрах проекта (ProjectData)");
+        }
     }
     
     public void ValidateMaterials(Dictionary<string, double> materials)

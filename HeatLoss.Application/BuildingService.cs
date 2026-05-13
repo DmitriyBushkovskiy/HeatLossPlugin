@@ -2,7 +2,6 @@
 using HeatLoss.Domain.Models.Results;
 using HeatLoss.Geometry;
 using HeatLoss.Infrastructure.Common;
-using HeatLoss.Infrastructure.Common.DTO;
 
 namespace HeatLoss.Application;
 
@@ -26,8 +25,8 @@ public class BuildingService
         var modelBuilder = new BuildingModelFactory(_geometry, _bimProvider);
 
         var building = modelBuilder.Build(extractedData);
-        
-        return new Building(building.OutsideTemperature, building.Spaces.Select(x => _mapper.ToSpace(x)).ToList());
+
+        return _mapper.ToBuilding(building, extractedData.ProjectData);
     }
 
     public void SaveHeatLossToModel(BuildingHeatLossResult heatLossResult)

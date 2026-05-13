@@ -142,7 +142,7 @@ public class BuildingModelFactory
     /// <summary>
     /// Создание участка стены для помещения
     /// </summary>
-    private void CreateWalls(List<SpaceIntermediateModel> spaces, List<CoordinateGridDto> nanocadGrids, Dictionary<string, double> materialsThermalConductivity, Dictionary<CardinalDirection, HeatLoss.Infrastructure.Common.Models.Vector2D> cardinalDirections)
+    private void CreateWalls(List<SpaceIntermediateModel> spaces, List<CoordinateGridDto> nanocadGrids, Dictionary<string, double> materialsThermalConductivity, Dictionary<CardinalDirection, Vector2D> cardinalDirections)
     {
         var materialIdParameterName = _parameterResolver.GetParameterName(ParameterKey.MaterialId);
         foreach (var space in spaces)
@@ -223,7 +223,7 @@ public class BuildingModelFactory
         }
     }
     
-    private void CreateOpenings(List<SpaceIntermediateModel> spaces, Dictionary<CardinalDirection, HeatLoss.Infrastructure.Common.Models.Vector2D> cardinalDirections)
+    private void CreateOpenings(List<SpaceIntermediateModel> spaces, Dictionary<CardinalDirection, Vector2D> cardinalDirections)
     {
         foreach (var space in spaces)
         {
@@ -250,6 +250,7 @@ public class BuildingModelFactory
                                 Height = opening.Height,
                                 BottomLevel = opening.BasePoint.Z,
                                 ThermalConductivity = double.TryParse(opening.GetParameter(_parameterResolver.GetParameterName(ParameterKey.MaterialThermalConductivity)),  NumberStyles.Any , CultureInfo.InvariantCulture,out var value) ? value : 0,
+                                AirPermeabilityResistance = double.TryParse(opening.GetParameter(_parameterResolver.GetParameterName(ParameterKey.AirPermeabilityResistance)),  NumberStyles.Any , CultureInfo.InvariantCulture,out var airPermeabilityResistance) ? airPermeabilityResistance : 0,
                                 Type = opening.Type,
                                 Mark = opening.GetParameter(_parameterResolver.GetParameterName(ParameterKey.OpeningMark)),
                                 CardinalDirection = wall.Position == SurfacePosition.Outside ? GetCardinalDirection(cardinalDirections, edge.LineString, openingPolygon) : null
@@ -396,6 +397,7 @@ public class BuildingModelFactory
                 }
             }
         }
+        _validator.ValidateCeilings(spaces);
     }
     
     /// <summary>
@@ -407,7 +409,7 @@ public class BuildingModelFactory
     /// <summary>
     /// Получение стороны света ограждающей конструкции
     /// </summary>
-    private CardinalDirection GetCardinalDirection(Dictionary<CardinalDirection, HeatLoss.Infrastructure.Common.Models.Vector2D> cardinalDirections, LineString spaceEdge, Polygon surfacePolygon)
+    private CardinalDirection GetCardinalDirection(Dictionary<CardinalDirection, Vector2D> cardinalDirections, LineString spaceEdge, Polygon surfacePolygon)
     {
         var vect = _geometry.GetInnerPerpendicular(surfacePolygon, spaceEdge);
         
@@ -415,10 +417,10 @@ public class BuildingModelFactory
         var cardinalDirection = CardinalDirection.N;
         foreach (var pair in cardinalDirections)
         {
-            var r = Math.Abs(vect.AngleTo(_mapper.ToVector2D(pair.Value)));
-            if (r < minAngle)
+            var angle = Math.Abs(vect.AngleTo(_mapper.ToVector2D(pair.Value)));
+            if (angle < minAngle)
             {
-                minAngle = r;
+                minAngle = angle;
                 cardinalDirection = pair.Key;
             }
         }

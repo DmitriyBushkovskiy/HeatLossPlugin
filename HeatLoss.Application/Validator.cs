@@ -96,10 +96,26 @@ public class Validator
             {
                 _bimProvider.PrintGeometry(group.ToList().Select(x => _mapper.ToPolyline3D(x.Polygon, group.Key)).ToList(), Constants.ValidationLayerName, null);
             }
-        }
-    
-        if (invalidOpenings.Any())
             throw new ValidationException("Ошибка при проверке проемов");
+        }
+        
+        foreach (var opening in openings)
+        {
+            if (opening.Type == OpeningType.Window && opening.AirPermeabilityResistance <= 0)
+            {
+                invalidOpenings.Add(opening);
+            }
+        }
+
+        if (invalidOpenings.Any())
+        {
+            _bimProvider.WriteMessage("Найдены проемы с некорректным сопротивлением воздухопроницанию. Проемы выделены красным");
+            foreach (var group in invalidOpenings.GroupBy(x => x.BottomLevel))
+            {
+                _bimProvider.PrintGeometry(group.ToList().Select(x => _mapper.ToPolyline3D(x.Polygon, group.Key)).ToList(), Constants.ValidationLayerName, null);
+            }
+            throw new ValidationException("Ошибка при проверке проемов");
+        }
     }
     
     private bool ValidateWallsTypesAndPositions(List<SpaceIntermediateModel> spaces, Polygon perimeter, double level)
@@ -136,5 +152,25 @@ public class Validator
         }
     
         return isCorrect;
+    }
+
+    public void ValidateCeilings(IEnumerable<SpaceIntermediateModel> spaces)
+    {
+        var spacesWithoutCeilings = new List<SpaceIntermediateModel>();
+        foreach (var space in spaces)
+        {
+            if (!space.Ceiling.Any() || space.Ceiling.Sum(x => x.Area) <= 0)
+                spacesWithoutCeilings.Add(space);
+        }
+
+        if (spacesWithoutCeilings.Any())
+        {
+            _bimProvider.WriteMessage("Найдены помещения без перекрытий:");
+            foreach (var space in spacesWithoutCeilings)
+            {
+                _bimProvider.WriteMessage($"Пом. {space.Number} {space.Name}");
+            }
+            throw new ValidationException("Ошибка при проверке перекрытий");
+        }
     }
 }
