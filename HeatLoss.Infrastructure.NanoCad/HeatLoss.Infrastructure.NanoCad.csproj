@@ -15,12 +15,6 @@
             <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\bin\hostmgd.dll</HintPath>
             <Private>False</Private>
         </Reference>
-        <Reference Include="MapiBaseTypes">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\nanoSPDS\bin\MapiBaseTypes.dll</HintPath>
-        </Reference>
-        <Reference Include="mapimgd">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\nanoSPDS\bin\mapimgd.dll</HintPath>
-        </Reference>
         <Reference Include="ncBIMSmgd">
             <HintPath>C:\Program Files\Nanosoft\nanoCAD BIM Строительство x64 25.0\bin\ncBIMSmgd.dll</HintPath>
             <Private>False</Private>
