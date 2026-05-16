@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <Reference Include="hostdbmgd">
+            <HintPath>$(NCadSDK)\include-x64\hostdbmgd.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="hostmgd">
+            <HintPath>$(NCadSDK)\include-x64\hostmgd.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="NrxGateMgd">
+            <HintPath>$(NCadSDK)\include-x64\nrxgatemgd.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ncBIMSmgd">
+            <HintPath>$(NCadBIMSDK)\include-x64\ncBIMSmgd.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+        <Reference Include="ncBIMParametricKit">
+            <HintPath>$(NCadBIMSDK)\include-x64\ncBIMParametricKit.dll</HintPath>
+            <Private>False</Private>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\HeatLoss.Application\HeatLoss.Application.csproj" />
+      <ProjectReference Include="..\HeatLoss.Domain\HeatLoss.Domain.csproj" />
+      <ProjectReference Include="..\HeatLoss.Reports\HeatLoss.Reports.csproj" />
+    </ItemGroup>
+
+</Project>
