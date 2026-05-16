@@ -1,12 +1,12 @@
 ﻿using System.Globalization;
 using BIMStructureMgd.Common;
 using BIMStructureMgd.DatabaseObjects;
-using HeatLoss.Infrastructure.NanoCad.Extensions;
 using HeatLoss.Domain.Enums;
 using HeatLoss.Infrastructure.Common;
 using HeatLoss.Infrastructure.Common.DTO;
 using HeatLoss.Infrastructure.Common.Enums;
 using HeatLoss.Infrastructure.Common.Models;
+using HeatLoss.Infrastructure.NanoCad.Extensions;
 using HeatLoss.Infrastructure.NanoCad.Objects;
 using HostMgd.ApplicationServices;
 using HostMgd.EditorInput;

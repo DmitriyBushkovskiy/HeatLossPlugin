@@ -8,23 +8,23 @@
 
     <ItemGroup>
         <Reference Include="hostdbmgd">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\bin\hostdbmgd.dll</HintPath>
+            <HintPath>$(NCadSDK)\include-x64\hostdbmgd.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="hostmgd">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\bin\hostmgd.dll</HintPath>
+            <HintPath>$(NCadSDK)\include-x64\hostmgd.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="NrxGateMgd">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD x64 25.0\bin\nrxgatemgd.dll</HintPath>
+            <HintPath>$(NCadSDK)\include-x64\nrxgatemgd.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="ncBIMSmgd">
-            <HintPath>C:\Program Files\Nanosoft\nanoCAD BIM Строительство x64 25.0\bin\ncBIMSmgd.dll</HintPath>
+            <HintPath>$(NCadBIMSDK)\include-x64\ncBIMSmgd.dll</HintPath>
             <Private>False</Private>
         </Reference>
         <Reference Include="ncBIMParametricKit">
-            <HintPath>D:\NanoCadSDK\NCadBIMSDK\include-x64\ncBIMParametricKit.dll</HintPath>
+            <HintPath>$(NCadBIMSDK)\include-x64\ncBIMParametricKit.dll</HintPath>
             <Private>False</Private>
         </Reference>
     </ItemGroup>
